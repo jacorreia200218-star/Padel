@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Padel Coach AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0F2027;
+    --bg-2:#132C34;
+    --card:#173840;
+    --card-hi:#1E434C;
+    --line: rgba(216,255,62,0.14);
+    --text:#EFF6F1;
+    --text-dim:#9CB8B4;
+    --text-faint:#6C8985;
+    --accent:#D8FF3E;
+    --accent-ink:#12210A;
+    --coral:#FF7A66;
+    --sky:#5AC0FF;
+    --amber:#FFBB55;
+    --radius:18px;
+    --radius-sm:12px;
+    font-size: 16px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);}
+  body{
+    font-family:'Inter', -apple-system, sans-serif;
+    color:var(--text);
+    overscroll-behavior-y:none;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk', 'Inter', sans-serif;
+    letter-spacing:-0.01em;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(216,255,62,0.06), transparent 40%),
+      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+  }
+  .topbar{
+    padding: calc(env(safe-area-inset-top,0px) + 18px) 20px 14px;
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:5;
+    background:rgba(15,32,39,0.88);
+    backdrop-filter: blur(14px);
+  }
+  .topbar .brand{font-size:1.05rem; font-weight:700;}
+  .topbar .brand .ball{color:var(--accent);}
+  .topbar .tabname{font-size:0.78rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.08em;}
+  main{flex:1; padding: 18px 16px calc(96px + env(safe-area-inset-bottom,0px));}
+  .tabbar{
+    position:fixed; bottom:0; left:0; right:0;
+    max-width:520px; margin:0 auto;
+    display:flex;
+    background:rgba(19,44,52,0.92);
+    backdrop-filter: blur(16px);
+    border-top:1px solid var(--line);
+    padding: 8px 6px calc(10px + env(safe-area-inset-bottom,0px));
+    z-index:10;
+  }
+  .tab-btn{
+    flex:1; background:none; border:none; color:var(--text-faint);
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 2px; font-family:inherit; font-size:0.66rem; font-weight:600;
+    letter-spacing:0.02em;
+  }
+  .tab-btn .dot{width:6px;height:6px;border-radius:50%;background:transparent;margin-bottom:1px;}
+  .tab-btn.active{color:var(--accent);}
+  .tab-btn.active .dot{background:var(--accent);}
+  .tab-btn svg{width:22px;height:22px;}
+
+  /* ---------- generic building blocks ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid rgba(255,255,255,0.05);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:12px;
+  }
+  .card.hi{background:var(--card-hi);}
+  .section-title{font-size:0.72rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-faint); font-weight:700; margin:22px 2px 10px;}
+  .section-title:first-child{margin-top:0;}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .btn{
+    font-family:'Space Grotesk', sans-serif;
+    border:none; border-radius:999px; padding:14px 20px;
+    font-weight:700; font-size:0.92rem; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    width:100%;
+  }
+  .btn-primary{background:var(--accent); color:var(--accent-ink);}
+  .btn-ghost{background:rgba(255,255,255,0.06); color:var(--text);}
+  .btn-danger{background:rgba(255,122,102,0.12); color:var(--coral);}
+  .chip{
+    display:inline-flex; align-items:center; padding:9px 14px; border-radius:999px;
+    background:rgba(255,255,255,0.06); color:var(--text-dim);
+    font-size:0.82rem; font-weight:600; border:1px solid transparent; cursor:pointer;
+    user-select:none;
+  }
+  .chip.selected{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .segmented{display:flex; background:rgba(255,255,255,0.05); border-radius:999px; padding:4px; gap:2px;}
+  .segmented .seg{flex:1; text-align:center; padding:9px 4px; border-radius:999px; font-size:0.76rem; font-weight:600; color:var(--text-dim); cursor:pointer;}
+  .segmented .seg.selected{background:var(--accent); color:var(--accent-ink);}
+  label.field-label{display:block; font-size:0.86rem; font-weight:600; color:var(--text); margin-bottom:10px;}
+  input[type=range]{
+    -webkit-appearance:none; width:100%; height:4px; border-radius:2px;
+    background: rgba(255,255,255,0.14); outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:22px;height:22px;border-radius:50%;
+    background:var(--accent); border:3px solid var(--accent-ink);
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  .slider-value{font-family:'Space Grotesk'; font-weight:700; color:var(--accent);}
+  .empty{
+    text-align:center; padding:60px 20px; color:var(--text-dim);
+  }
+  .empty .big-emoji{font-size:2.4rem; display:block; margin-bottom:14px;}
+  .divider-lines{height:10px; margin:4px 0 14px; background-image:repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 20px); background-position:center; background-repeat:no-repeat; background-size:100% 1px; background-position-y:center;}
+  .tag{display:inline-block; font-size:0.66rem; font-weight:700; padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.08); color:var(--text-dim); margin-right:4px; margin-bottom:4px;}
+  .modal-backdrop{position:fixed; inset:0; background:rgba(6,14,17,0.75); backdrop-filter:blur(4px); z-index:50; display:flex; align-items:flex-end;}
+  .modal-sheet{
+    background:var(--bg-2); width:100%; max-width:520px; margin:0 auto;
+    border-radius:22px 22px 0 0; max-height:88dvh; overflow-y:auto;
+    padding:20px 20px calc(30px + env(safe-area-inset-bottom,0px));
+    border-top:1px solid var(--line);
+  }
+  .modal-handle{width:40px; height:4px; border-radius:2px; background:rgba(255,255,255,0.2); margin:0 auto 16px;}
+  .close-x{position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.08); border:none; color:var(--text); width:32px; height:32px; border-radius:50%; font-size:1rem;}
+
+  /* ---------- readiness ring ---------- */
+  .ring-wrap{display:flex; align-items:center; gap:16px;}
+  .ring-label-big{font-family:'Space Grotesk'; font-size:2rem; font-weight:700;}
+  .ring-sub{color:var(--text-dim); font-size:0.8rem;}
+
+  /* ---------- exercise card ---------- */
+  .ex-card{display:flex; gap:12px; align-items:center; background:var(--card); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; cursor:pointer; border:1px solid rgba(255,255,255,0.04);}
+  .ex-badge{width:42px;height:42px;border-radius:12px;background:rgba(216,255,62,0.12); display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk'; font-weight:700; color:var(--accent); font-size:0.95rem; flex-shrink:0;}
+  .ex-name{font-weight:700; font-size:0.9rem;}
+  .ex-meta{font-size:0.74rem; color:var(--text-dim); margin-top:2px;}
+  .ex-time{font-size:0.72rem; color:var(--text-faint); font-family:'Space Grotesk';}
+
+  /* ---------- calendar ---------- */
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .cal-day{aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:0.72rem; color:var(--text-dim); background:rgba(255,255,255,0.03); position:relative;}
+  .cal-day.today{outline:1.5px solid var(--accent);}
+  .cal-day .mark{width:7px;height:7px;border-radius:50%; margin-top:3px;}
+  .cal-legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:16px; font-size:0.72rem; color:var(--text-dim);}
+  .legend-dot{width:8px;height:8px;border-radius:50%; display:inline-block; margin-right:5px;}
+
+  /* ---------- stats ---------- */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .stat-tile{background:var(--card); border-radius:var(--radius-sm); padding:14px;}
+  .stat-tile .val{font-family:'Space Grotesk'; font-size:1.4rem; font-weight:700;}
+  .stat-tile .lab{font-size:0.72rem; color:var(--text-dim); margin-top:2px;}
+  svg.chart{width:100%; height:130px; overflow:visible;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="brand"><span class="ball">●</span> Padel Coach AI</div>
+    <div class="tabname" id="tabname">Hoje</div>
+  </div>
+  <main id="view"></main>
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<script>
+/* ======================================================================
+   PADEL COACH AI — self-contained web app
+   Regras 100% locais (sem IA online, sem chamadas externas de lógica).
+   Persistência via window.storage (a API de armazenamento do artifact).
+   ====================================================================== */
+
+/* ---------------------------- Domain data ---------------------------- */
+
+const CATEGORY_LABEL = {
+  mobility:"Mobilidade", stretching:"Alongamentos", strength:"Força", core:"Core",
+  explosiveness:"Explosão", agility:"Agilidade", footwork:"Footwork", jumps:"Saltos",
+  speed:"Velocidade", stability:"Estabilidade", balance:"Equilíbrio",
+  injuryPrevention:"Prevenção de Lesões", rehabilitation:"Reabilitação",
+  shoulder:"Treino de Ombro", elbow:"Treino de Cotovelo", wrist:"Treino de Punho",
+  knee:"Treino de Joelho", recovery:"Recuperação", activation:"Ativação", breathing:"Respiração"
+};
+const AGGRESSIVE_CATS = new Set(["strength","explosiveness","jumps","speed","agility"]);
+
+const PAIN_ZONES = [
+  {id:"shoulder", label:"Ombro", rehab:"shoulder"},
+  {id:"elbow", label:"Cotovelo", rehab:"elbow"},
+  {id:"wrist", label:"Punho", rehab:"wrist"},
+  {id:"back", label:"Costas", rehab:"rehabilitation"},
+  {id:"calves", label:"Gémeos", rehab:"rehabilitation"},
+  {id:"knee", label:"Joelho", rehab:"knee"},
+  {id:"hip", label:"Anca", rehab:"rehabilitation"},
+];
+const EQUIPMENT = [
+  {id:"bands", label:"Elásticos"}, {id:"dumbbells", label:"Halteres"},
+  {id:"bike", label:"Bicicleta"}, {id:"medicineBall", label:"Bola medicinal"},
+  {id:"ladder", label:"Escadas"}, {id:"fingerBand", label:"Elástico de Dedos"},
+  {id:"cones", label:"Cones"}, {id:"foamRoller", label:"Rolo de EVA"},
+  {id:"tens", label:"TENS / Eletroestimulador"},
+  {id:"bodyweight", label:"Apenas peso corporal"},
+];
+const TIME_OPTIONS = [10,20,30,45,60];
+const PLAYING_TODAY = [
+  {id:"none", label:"Não"}, {id:"lesson", label:"Aula"}, {id:"casual", label:"Jogo casual"},
+  {id:"tournament", label:"Torneio"}, {id:"intense", label:"Treino intenso"},
+];
+const YESTERDAY = [
+  {id:"none", label:"Não"}, {id:"light", label:"Sim (leve)"}, {id:"intense", label:"Sim (intenso)"},
+];
+const GOALS = [
+  {id:"explosiveness", label:"Melhorar explosão", favors:["explosiveness","jumps","speed"]},
+  {id:"endurance", label:"Melhorar resistência", favors:["agility","footwork","speed"]},
+  {id:"injuryPrevention", label:"Evitar lesões", favors:["injuryPrevention","stability","mobility"]},
+  {id:"weightLoss", label:"Perder peso", favors:["agility","explosiveness","footwork"]},
+  {id:"strength", label:"Ganhar força", favors:["strength","core"]},
+  {id:"speed", label:"Melhorar velocidade", favors:["speed","agility","footwork"]},
+  {id:"recovery", label:"Melhorar recuperação", favors:["recovery","mobility","stretching"]},
+  {id:"mobility", label:"Melhorar mobilidade", favors:["mobility","stretching","balance"]},
+];
+
+const EXERCISES = [
+  ex("mob_ombros","Círculos de Ombro","Círculos amplos e controlados com os braços.","Mobilizar o ombro antes do jogo.",3,2,"15/direção",15,"beginner",["bodyweight"],["mobility","activation"]),
+  ex("mob_tronco","Rotação de Tronco","Rodar o tronco de um lado para o outro.","Preparar a rotação do golpe.",3,2,"12/lado",15,"beginner",["bodyweight"],["mobility","activation"]),
+  ex("mob_anca","Mobilidade de Anca 90/90","Alternar a rotação da anca sentado no chão.","Melhorar rotação de anca para deslocações.",4,2,"8/lado",20,"intermediate",["bodyweight"],["mobility"]),
+  ex("mob_tornozelo","Mobilidade de Tornozelo","Círculos e flexão do tornozelo em apoio unipodal.","Preparar mudanças de direção rápidas.",3,2,"10/pé",15,"beginner",["bodyweight"],["mobility"]),
+  ex("mob_punho","Mobilidade de Punho e Cotovelo","Flexão, extensão e círculos lentos de punho.","Preparar para o impacto repetido da raquete.",3,2,"12",15,"beginner",["bodyweight"],["mobility","wrist","elbow"]),
+  ex("alo_isquios","Alongamento de Isquiotibiais","Inclinar o tronco à frente com a perna esticada.","Reduzir tensão posterior da coxa.",3,2,"30s/perna",10,"beginner",["bodyweight"],["stretching","recovery"]),
+  ex("alo_gemeos","Alongamento de Gémeos","Contra a parede, perna esticada atrás.","Aliviar tensão nos gémeos.",3,2,"30s/perna",10,"beginner",["bodyweight"],["stretching","recovery"]),
+  ex("alo_peitoral","Alongamento de Peitoral e Ombro","Braço apoiado numa parede, rodar o tronco.","Libertar tensão do ombro dominante.",3,2,"30s/lado",10,"beginner",["bodyweight"],["stretching","recovery","shoulder"]),
+  ex("alo_lombar","Postura da Criança","Sentar sobre os calcanhares, braços à frente.","Descomprimir a zona lombar.",3,1,"60s",0,"beginner",["bodyweight"],["stretching","recovery"]),
+  ex("for_agachamento","Agachamento","Agachamento controlado com peso corporal.","Força de pernas para deslocações e saltos.",6,3,"12",60,"beginner",["bodyweight"],["strength"]),
+  ex("for_afundo","Afundo (Lunge)","Passo em frente com descida controlada.","Força unilateral para alcance lateral.",6,3,"10/perna",60,"intermediate",["bodyweight"],["strength"]),
+  ex("for_remo","Remada com Elástico","Puxar o elástico em direção ao tronco.","Fortalecer costas e equilibrar o ombro dominante.",5,3,"15",45,"beginner",["bands"],["strength","injuryPrevention"]),
+  ex("for_ombro","Desenvolvimento de Ombro","Elevar halteres acima da cabeça.","Força de ombro para potência no smash.",6,3,"10",60,"intermediate",["dumbbells"],["strength"]),
+  ex("for_gemeos","Elevação de Gémeos","Elevar os calcanhares do chão.","Força para arranques e travagens rápidas.",4,3,"15",30,"beginner",["bodyweight"],["strength","knee"]),
+  ex("core_prancha","Prancha Frontal","Manter o corpo alinhado nos antebraços.","Estabilidade do tronco.",3,3,"30-40s",30,"beginner",["bodyweight"],["core","stability"]),
+  ex("core_lateral","Prancha Lateral","Apoio lateral no antebraço, quadril elevado.","Força oblíqua para rotação e golpes laterais.",3,3,"25-30s/lado",30,"intermediate",["bodyweight"],["core","stability"]),
+  ex("core_rotacao","Rotação de Tronco c/ Bola Medicinal","Rodar o tronco com a bola, sentado.","Potência rotacional específica do padel.",5,3,"12/lado",40,"intermediate",["medicineBall"],["core","explosiveness"]),
+  ex("core_deadbug","Dead Bug","Estender braço e perna opostos, deitado.","Controlo lombopélvico.",4,3,"10/lado",30,"beginner",["bodyweight"],["core","injuryPrevention","rehabilitation"]),
+  ex("exp_squatjump","Squat Jump","Agachar e saltar explosivamente.","Potência de pernas para arranques.",5,4,"8",60,"advanced",["bodyweight"],["explosiveness","jumps"]),
+  ex("exp_lateral","Saltos Laterais","Saltar lateralmente de um pé para o outro.","Explosão lateral para cobrir o campo.",5,4,"10/lado",45,"intermediate",["bodyweight"],["explosiveness","agility","jumps"]),
+  ex("exp_arranques","Arranques Curtos","Sprints de 5-10m a partir de posição parada.","Velocidade de reação para bolas curtas.",6,5,"1 sprint",40,"advanced",["bodyweight"],["explosiveness","speed"]),
+  ex("agi_escada","Escada de Agilidade","Passos rápidos por dentro da escada.","Rapidez e coordenação de pés.",6,4,"1 passagem",30,"intermediate",["ladder"],["agility","footwork"]),
+  ex("agi_splitstep","Split Step","Pequeno salto de preparação antes da reação.","Padrão de movimento fundamental do padel.",5,4,"10",30,"beginner",["bodyweight"],["agility","footwork"]),
+  ex("agi_lateral","Deslocação Lateral entre Cones","Deslocação lateral rápida.","Footwork lateral específico do padel.",6,4,"30s",30,"intermediate",["bodyweight"],["agility","footwork","speed"]),
+  ex("est_unipodal","Apoio Unipodal","Equilíbrio numa perna, olhos abertos/fechados.","Estabilidade de tornozelo e joelho.",3,3,"30s/perna",20,"beginner",["bodyweight"],["stability","balance","injuryPrevention","knee"]),
+  ex("est_birddog","Bird Dog","Estender braço e perna opostos, de quatro apoios.","Estabilidade lombar e coordenação cruzada.",4,3,"10/lado",30,"beginner",["bodyweight"],["stability","core","injuryPrevention"]),
+  ex("prev_rotadores","Rotação Externa de Ombro","Rodar o antebraço para fora contra o elástico.","Fortalecer rotadores externos do ombro.",4,3,"15/braço",30,"beginner",["bands"],["injuryPrevention","shoulder"]),
+  ex("prev_nordic","Nordic Curl Assistido","Descida controlada e lenta, joelhos fixos.","Prevenção de lesões nos isquiotibiais.",5,3,"6",60,"advanced",["bodyweight"],["injuryPrevention"]),
+  ex("prev_copenhagen","Copenhagen Plank","Prancha lateral com a perna de cima apoiada.","Fortalecer adutores.",4,3,"20-25s/lado",40,"advanced",["bodyweight"],["injuryPrevention"]),
+  ex("reab_cotovelo","Isometria de Extensores do Punho","Segurar o punho em extensão contra resistência leve.","Aliviar e fortalecer em caso de dor no cotovelo.",5,3,"20-30s",30,"beginner",["bands"],["rehabilitation","elbow"]),
+  ex("reab_punho","Fortalecimento de Flexores do Punho","Flexão e extensão lenta do punho.","Reabilitação e prevenção de dor no punho.",4,3,"15",30,"beginner",["dumbbells"],["rehabilitation","wrist"]),
+  ex("reab_ombro","Exercício Pendular de Ombro","Deixar o braço balançar suavemente.","Aliviar dor aguda no ombro.",3,2,"20 balanços",20,"beginner",["bodyweight"],["rehabilitation","shoulder"]),
+  ex("reab_joelho","Isometria de Quadríceps","Costas na parede, joelhos a ângulo confortável.","Manter força do quadríceps com dor no joelho.",4,3,"20-30s",40,"beginner",["bodyweight"],["rehabilitation","knee"]),
+  ex("reab_gatocamelo","Gato-Camelo","Alternar flexão/extensão suave da coluna.","Aliviar tensão e rigidez lombar.",3,2,"12",15,"beginner",["bodyweight"],["rehabilitation","mobility"]),
+  ex("rec_caminhada","Caminhada Leve","Caminhar em ritmo confortável.","Recuperação ativa, promover circulação.",10,1,"10 min",0,"beginner",["bodyweight"],["recovery"]),
+  ex("rec_bicicleta","Bicicleta Leve","Pedalar a ritmo baixo e constante.","Recuperação ativa de baixo impacto.",15,1,"15 min",0,"beginner",["bike"],["recovery"]),
+  ex("ativ_skipping","Skipping Baixo","Corrida no lugar com joelhos baixos.","Elevar a temperatura corporal antes do jogo.",3,2,"30s",20,"beginner",["bodyweight"],["activation"]),
+  ex("ativ_toques","Toques de Raquete em Vazio","Simular golpes sem bola, ritmo lento.","Ativar o padrão de movimento antes do jogo.",3,1,"20/lado",0,"beginner",["bodyweight"],["activation"]),
+  ex("resp_diafragmatica","Respiração Diafragmática","Inspirar enchendo o abdómen, expirar devagar.","Reduzir ativação nervosa, acelerar recuperação.",5,1,"10 respirações",0,"beginner",["bodyweight"],["breathing","recovery"]),
+  ex("resp_caixa","Respiração em Caixa (4-4-4-4)","Inspirar, reter, expirar, reter — 4s cada.","Acalmar e focar antes de um torneio.",4,1,"6 ciclos",0,"beginner",["bodyweight"],["breathing"]),
+  ex("reab_dedos","Fortalecimento de Preensão com Elástico de Dedos","Abrir os dedos contra a resistência do elástico, de forma controlada.","Fortalecer dedos e antebraço, protegendo punho e cotovelo do impacto da raquete.",4,3,"15",30,"beginner",["fingerBand"],["rehabilitation","wrist","elbow","injuryPrevention"]),
+  ex("agi_cones_zigzag","Deslocação em Zigue-Zague entre Cones","Deslocação rápida em zigue-zague, contornando os cones.","Footwork multidirecional específico do padel.",6,4,"1 passagem",30,"intermediate",["cones"],["agility","footwork","speed"]),
+  ex("rec_rolo_eva","Automassagem com Rolo de EVA","Rolar lentamente gémeos, quadríceps e costas sobre o rolo.","Libertar tensão muscular e acelerar a recuperação.",8,1,"2 min/zona",0,"beginner",["foamRoller"],["recovery"]),
+  ex("rec_tens","Eletroestimulação de Recuperação (TENS)","Colocar os elétrodos na zona fatigada ou dolorida, sessão de baixa intensidade.","Aliviar dor muscular e acelerar a recuperação entre jogos.",15,1,"15-20 min",0,"beginner",["tens"],["recovery","rehabilitation"]),
+];
+function ex(id,name,desc,goal,duration,sets,reps,rest,diff,equip,cats){
+  return {id,name,desc,goal,duration,sets,reps,rest,diff,equip,cats};
+}
+function exerciseById(id){ return EXERCISES.find(e=>e.id===id); }
+
+/* ------------------------------ Rule engine ---------------------------- */
+
+function generatePlan(checkin, goalIds){
+  const reasoning=[];
+  let excluded = new Set();
+  let forced = new Set();
+
+  if(checkin.pain.length){
+    const zoneLabels = checkin.pain.map(p=>PAIN_ZONES.find(z=>z.id===p).label).join(", ");
+    reasoning.push(`Dor reportada em ${zoneLabels}: a evitar exercícios agressivos, priorizando reabilitação.`);
+    AGGRESSIVE_CATS.forEach(c=>excluded.add(c));
+    checkin.pain.forEach(p=>forced.add(PAIN_ZONES.find(z=>z.id===p).rehab));
+  }
+  const highFatigue = checkin.fatigue>=8, highSoreness=checkin.soreness>=8, poorSleep=checkin.sleep<=3;
+  if(highFatigue||highSoreness||poorSleep){
+    reasoning.push("Sinais de fadiga elevada, dor muscular alta ou sono fraco: prioridade para recuperação.");
+    AGGRESSIVE_CATS.forEach(c=>excluded.add(c));
+  }
+
+  let planType, focus;
+  const playsToday = checkin.playingToday!=="none";
+  const highStakes = checkin.playingToday==="tournament";
+
+  if(highStakes){
+    planType="Ativação Pré-Jogo";
+    focus=["mobility","activation","stretching","breathing"];
+    reasoning.push("Torneio hoje: apenas mobilidade, ativação, alongamentos e respiração — sem carga nova.");
+  } else if(checkin.pain.length){
+    planType="Reabilitação";
+    focus=["rehabilitation","mobility","stretching", ...forced];
+    if(playsToday) focus.push("activation");
+  } else if(checkin.playedYesterday==="intense" && playsToday){
+    planType="Recuperação";
+    focus=["mobility","stretching","recovery","activation"];
+    reasoning.push("Jogaste intenso ontem e voltas a jogar hoje: recuperação ativa e ativação — sem força.");
+  } else if(highFatigue||highSoreness||poorSleep){
+    planType="Recuperação";
+    focus=["recovery","mobility","stretching","breathing"];
+  } else if(checkin.playedYesterday==="none" && !playsToday && checkin.energy>=7){
+    planType="Força e Potência";
+    focus=["strength","explosiveness","core","balance"];
+    reasoning.push("Descansaste ontem, não jogas hoje e a energia está alta: dia ideal para força, explosão e core.");
+  } else if(playsToday){
+    planType="Manutenção Leve";
+    focus=["mobility","activation","footwork","stretching"];
+    reasoning.push("Vais jogar hoje: ativação leve e footwork, mantendo o corpo fresco.");
+  } else {
+    planType="Treino Equilibrado";
+    focus=["mobility","core","stability","agility"];
+    reasoning.push("Dia sem jogo nem sinais de alarme: treino equilibrado.");
+  }
+
+  if(planType==="Treino Equilibrado" || planType==="Força e Potência"){
+    const goalsChosen = GOALS.filter(g=>goalIds.includes(g.id));
+    goalsChosen.forEach(g=> g.favors.forEach(c=>{ if(!excluded.has(c) && !focus.includes(c)) focus.push(c); }));
+    if(goalsChosen.length){
+      reasoning.push("Ajustado aos objetivos definidos: "+goalsChosen.map(g=>g.label).join(", ")+".");
+    }
+  }
+
+  focus = [...new Set(focus)].filter(c=>!excluded.has(c));
+  if(!focus.length) focus=["mobility","stretching","breathing"];
+
+  const equipSet = new Set(checkin.equipment.length?checkin.equipment:["bodyweight"]);
+  let pool = EXERCISES.filter(e=>
+    e.cats.some(c=>focus.includes(c)) &&
+    !e.cats.some(c=>excluded.has(c)) &&
+    (e.equip.every(eq=>eq==="bodyweight") || e.equip.some(eq=>equipSet.has(eq)))
+  );
+
+  let selected=[];
+  if(checkin.pain.length){
+    checkin.pain.forEach(p=>{
+      const rehabCat = PAIN_ZONES.find(z=>z.id===p).rehab;
+      const match = pool.find(e=>e.cats.includes(rehabCat) && !selected.includes(e));
+      if(match) selected.push(match);
+    });
+  }
+  const targetCount = {10:2,20:3,30:5,45:7,60:9}[checkin.time]||5;
+  const rest = pool.filter(e=>!selected.includes(e)).sort((a,b)=>{
+    const ra = focus.findIndex(c=>a.cats.includes(c)); const rb = focus.findIndex(c=>b.cats.includes(c));
+    return (ra<0?99:ra)-(rb<0?99:rb);
+  });
+  for(const e of rest){ if(selected.length>=targetCount) break; selected.push(e); }
+  if(!selected.length){
+    selected = EXERCISES.filter(e=>(e.cats.includes("mobility")||e.cats.includes("stretching")) && e.equip.every(x=>x==="bodyweight")).slice(0,targetCount);
+  }
+
+  const duration = selected.reduce((s,e)=>s+e.duration,0);
+  return {
+    date: checkin.date, planType, focus, exerciseIds: selected.map(e=>e.id),
+    reasoning, duration, completed:false
+  };
+}
+
+function readinessScore(c){
+  return Math.round((((10-c.fatigue)+(10-c.soreness)+c.energy+c.sleep)/4)*10)/10;
+}
+
+/* ------------------------------ Storage -------------------------------- */
+
+const STORAGE_KEY = 'padel-coach-ai-data';
+const DEFAULT_DATA = { checkins:{}, plans:{}, logs:{}, goals:["injuryPrevention"] };
+let DATA = structuredClone(DEFAULT_DATA);
+let dataLoaded = false;
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) DATA = JSON.parse(raw);
+  }catch(e){ /* first run, or storage unavailable in this context */ }
+  dataLoaded = true;
+}
+async function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
+  }catch(e){
+    showToast('Não foi possível guardar neste ambiente. Se estás a testar dentro do Claude, guarda o ficheiro e abre-o no Safari do iPhone — aí a gravação funciona normalmente.');
+  }
+}
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(t) t.remove();
+  t=document.createElement('div');
+  t.id='toast';
+  t.textContent=msg;
+  t.style.cssText='position:fixed;left:16px;right:16px;bottom:96px;max-width:488px;margin:0 auto;background:var(--card-hi);border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:0.82rem;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,0.35);';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+function todayKey(){
+  const d=new Date(); d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function dateKey(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); }
+
+/* ------------------------------ App shell ------------------------------ */
+
+const TABS = [
+  {id:"today", label:"Hoje", icon:iconToday},
+  {id:"library", label:"Biblioteca", icon:iconLibrary},
+  {id:"history", label:"Histórico", icon:iconHistory},
+  {id:"stats", label:"Estatísticas", icon:iconStats},
+  {id:"settings", label:"Definições", icon:iconSettings},
+];
+let activeTab="today";
+let libraryFilter=null, librarySearch="";
+let calMonth=new Date(); calMonth.setDate(1);
+
+function renderTabbar(){
+  const bar=document.getElementById('tabbar');
+  bar.innerHTML="";
+  TABS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tab-btn'+(activeTab===t.id?' active':'');
+    b.innerHTML = t.icon()+`<span class="dot"></span>${t.label}`;
+    b.onclick=()=>{ activeTab=t.id; document.getElementById('tabname').textContent=t.label; render(); };
+    bar.appendChild(b);
+  });
+}
+
+function render(){
+  renderTabbar();
+  document.getElementById('tabname').textContent = TABS.find(t=>t.id===activeTab).label;
+  const view=document.getElementById('view');
+  if(activeTab==="today") view.innerHTML = renderToday();
+  else if(activeTab==="library") view.innerHTML = renderLibrary();
+  else if(activeTab==="history") view.innerHTML = renderHistory();
+  else if(activeTab==="stats") view.innerHTML = renderStats();
+  else if(activeTab==="settings") view.innerHTML = renderSettings();
+  afterRender();
+}
+
+/* ------------------------------ Icons (inline svg) ---------------------- */
+function iconToday(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>`;}
+function iconLibrary(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h6v14H4zM14 5h6v14h-6z"/></svg>`;}
+function iconHistory(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>`;}
+function iconStats(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19V10M12 19V5M19 19v-7"/></svg>`;}
+function iconSettings(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>`;}
+
+/* ------------------------------ Today tab ------------------------------- */
+
+function renderToday(){
+  const key = todayKey();
+  const checkin = DATA.checkins[key];
+  if(!checkin){
+    return `
+      <div class="empty card hi">
+        <span class="big-emoji">🎾</span>
+        <h3 style="margin:0 0 8px;">Ainda sem check-in hoje</h3>
+        <p style="margin:0 0 20px; font-size:0.88rem;">Responde a umas perguntas rápidas para gerar o teu plano do dia.</p>
+        <button class="btn btn-primary" onclick="openCheckin()">Começar Check-in</button>
+      </div>`;
+  }
+  let plan = DATA.plans[key];
+  if(!plan){ plan = generatePlan(checkin, DATA.goals); DATA.plans[key]=plan; saveData(); }
+
+  const rs = readinessScore(checkin);
+  const pct = Math.max(0,Math.min(1, rs/10));
+  const ring = ringSvg(pct);
+
+  const exList = plan.exerciseIds.map(id=>exerciseById(id)).filter(Boolean);
+
+  return `
+    <div class="card hi">
+      <div class="ring-wrap">
+        ${ring}
+        <div>
+          <div class="ring-label-big">${plan.planType}</div>
+          <div class="ring-sub">~${plan.duration} min · prontidão ${rs}/10</div>
+        </div>
+      </div>
+      <div class="chip-row" style="margin-top:14px;">
+        ${plan.focus.map(c=>`<span class="tag">${CATEGORY_LABEL[c]}</span>`).join('')}
+      </div>
+      ${plan.reasoning.length?`<div class="divider-lines"></div>` + plan.reasoning.map(r=>`<div style="font-size:0.78rem; color:var(--text-dim); margin-bottom:6px;">✦ ${r}</div>`).join(''):''}
+    </div>
+
+    <div class="section-title">Exercícios de hoje</div>
+    ${exList.map(e=>exerciseCardHtml(e)).join('')}
+
+    ${plan.completed ?
+      `<div class="card" style="text-align:center; color:var(--accent); font-weight:700;">✓ Dia concluído</div>`
+      : `<button class="btn btn-primary" style="margin-top:8px;" onclick="completeToday()">Marcar dia como concluído</button>`
+    }
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="openCheckin(true)">Refazer check-in de hoje</button>
+  `;
+}
+
+function ringSvg(pct){
+  const r=34, c=2*Math.PI*r;
+  return `<svg width="84" height="84" viewBox="0 0 84 84" style="flex-shrink:0;">
+    <circle cx="42" cy="42" r="${r}" stroke="rgba(255,255,255,0.08)" stroke-width="7" fill="none"/>
+    <circle cx="42" cy="42" r="${r}" stroke="var(--accent)" stroke-width="7" fill="none"
+      stroke-dasharray="${c}" stroke-dashoffset="${c*(1-pct)}" stroke-linecap="round"
+      transform="rotate(-90 42 42)"/>
+  </svg>`;
+}
+
+function exerciseCardHtml(e){
+  return `<div class="ex-card" onclick="openExercise('${e.id}')">
+    <div class="ex-badge">${e.sets}×</div>
+    <div style="flex:1;">
+      <div class="ex-name">${e.name}</div>
+      <div class="ex-meta">${e.reps} · descanso ${e.rest}s</div>
+    </div>
+    <div class="ex-time">${e.duration}m</div>
+  </div>`;
+}
+
+function openCheckin(redo){
+  const key=todayKey();
+  const existing = redo ? DATA.checkins[key] : null;
+  showModal(checkinFormHtml(existing));
+  bindCheckinForm(existing);
+}
+
+function checkinFormHtml(existing){
+  const c = existing || {playingToday:"none", playedYesterday:"none", energy:5, soreness:2, fatigue:4, sleep:6, pain:[], time:30, equipment:["bodyweight"]};
+  return `
+    <div class="modal-handle"></div>
+    <h2 style="margin:0 0 18px;">Check-in diário</h2>
+
+    <label class="field-label">Hoje vou jogar padel?</label>
+    <div class="chip-row" id="f-playingToday" style="margin-bottom:20px;">
+      ${PLAYING_TODAY.map(o=>`<span class="chip ${o.id===c.playingToday?'selected':''}" data-val="${o.id}">${o.label}</span>`).join('')}
+    </div>
+
+    <label class="field-label">Ontem joguei?</label>
+    <div class="segmented" id="f-playedYesterday" style="margin-bottom:20px;">
+      ${YESTERDAY.map(o=>`<span class="seg ${o.id===c.playedYesterday?'selected':''}" data-val="${o.id}">${o.label}</span>`).join('')}
+    </div>
+
+    <label class="field-label">Como me sinto hoje</label>
+    ${sliderRow('energy','Energia',c.energy)}
+    ${sliderRow('soreness','Dor muscular',c.soreness)}
+    ${sliderRow('fatigue','Cansaço',c.fatigue)}
+    ${sliderRow('sleep','Qualidade do sono',c.sleep)}
+
+    <label class="field-label" style="margin-top:6px;">Dor em alguma zona?</label>
+    <div class="chip-row" id="f-pain" style="margin-bottom:20px;">
+      ${PAIN_ZONES.map(z=>`<span class="chip ${c.pain.includes(z.id)?'selected':''}" data-val="${z.id}">${z.label}</span>`).join('')}
+    </div>
+
+    <label class="field-label">Quanto tempo tenho hoje?</label>
+    <div class="segmented" id="f-time" style="margin-bottom:20px;">
+      ${TIME_OPTIONS.map(t=>`<span class="seg ${t===c.time?'selected':''}" data-val="${t}">${t===60?'60+':t}</span>`).join('')}
+    </div>
+
+    <label class="field-label">Material disponível</label>
+    <div class="chip-row" id="f-equipment" style="margin-bottom:24px;">
+      ${EQUIPMENT.map(eq=>`<span class="chip ${c.equipment.includes(eq.id)?'selected':''}" data-val="${eq.id}">${eq.label}</span>`).join('')}
+    </div>
+
+    <button class="btn btn-primary" id="f-submit">Gerar Plano</button>
+  `;
+}
+
+function sliderRow(field,label,val){
+  return `<div style="margin-bottom:16px;">
+    <div class="row"><span style="font-size:0.85rem; color:var(--text-dim);">${label}</span><span class="slider-value" id="v-${field}">${val}</span></div>
+    <input type="range" min="1" max="10" value="${val}" id="f-${field}" oninput="document.getElementById('v-${field}').textContent=this.value">
+  </div>`;
+}
+
+function bindCheckinForm(existing){
+  const single = (containerId)=>{
+    const el=document.getElementById(containerId);
+    el.querySelectorAll('.chip,.seg').forEach(node=>{
+      node.onclick=()=>{ el.querySelectorAll('.chip,.seg').forEach(n=>n.classList.remove('selected')); node.classList.add('selected'); };
+    });
+  };
+  single('f-playingToday'); single('f-playedYesterday'); single('f-time');
+  document.getElementById('f-pain').querySelectorAll('.chip').forEach(n=>{ n.onclick=()=>n.classList.toggle('selected'); });
+  document.getElementById('f-equipment').querySelectorAll('.chip').forEach(n=>{ n.onclick=()=>n.classList.toggle('selected'); });
+
+  document.getElementById('f-submit').onclick=()=>{
+    const val=(id)=>document.querySelector(`#${id} .selected`)?.dataset.val;
+    const multi=(id)=>[...document.querySelectorAll(`#${id} .selected`)].map(n=>n.dataset.val);
+    const key = todayKey();
+    const checkin = {
+      date:key,
+      playingToday: val('f-playingToday')||"none",
+      playedYesterday: val('f-playedYesterday')||"none",
+      energy: +document.getElementById('f-energy').value,
+      soreness: +document.getElementById('f-soreness').value,
+      fatigue: +document.getElementById('f-fatigue').value,
+      sleep: +document.getElementById('f-sleep').value,
+      pain: multi('f-pain'),
+      time: +(val('f-time')||30),
+      equipment: multi('f-equipment').length?multi('f-equipment'):["bodyweight"],
+    };
+    DATA.checkins[key]=checkin;
+    DATA.plans[key]=generatePlan(checkin, DATA.goals);
+    saveData();
+    closeModal();
+    render();
+  };
+}
+
+function completeToday(){
+  const key=todayKey();
+  const checkin=DATA.checkins[key];
+  const plan=DATA.plans[key];
+  plan.completed=true;
+  DATA.logs[key]={
+    date:key, didTrain:true, didPlayPadel: checkin.playingToday!=="none",
+    padelHours: checkin.playingToday!=="none" ? 1.5:0,
+    fatigue:checkin.fatigue, pain:checkin.pain.length, sleep:checkin.sleep, energy:checkin.energy
+  };
+  saveData();
+  render();
+}
+
+/* ------------------------------ Library tab ----------------------------- */
+
+function renderLibrary(){
+  const cats = Object.keys(CATEGORY_LABEL);
+  const filtered = EXERCISES.filter(e=>{
+    const matchCat = !libraryFilter || e.cats.includes(libraryFilter);
+    const matchSearch = !librarySearch || e.name.toLowerCase().includes(librarySearch.toLowerCase());
+    return matchCat && matchSearch;
+  });
+  return `
+    <input id="lib-search" placeholder="Procurar exercício" value="${librarySearch}"
+      style="width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:var(--card); color:var(--text); font-size:0.88rem; margin-bottom:12px;">
+    <div class="chip-row" style="margin-bottom:16px; overflow-x:auto; flex-wrap:nowrap;">
+      <span class="chip ${!libraryFilter?'selected':''}" onclick="setLibFilter(null)">Todos</span>
+      ${cats.map(c=>`<span class="chip ${libraryFilter===c?'selected':''}" onclick="setLibFilter('${c}')">${CATEGORY_LABEL[c]}</span>`).join('')}
+    </div>
+    ${filtered.map(e=>exerciseCardHtml(e)).join('') || `<div class="empty">Sem resultados.</div>`}
+  `;
+}
+function setLibFilter(c){ libraryFilter=c; render(); }
+
+function openExercise(id){
+  const e=exerciseById(id);
+  showModal(`
+    <div class="modal-handle"></div>
+    <div class="chip-row" style="margin-bottom:10px;">${e.cats.map(c=>`<span class="tag">${CATEGORY_LABEL[c]}</span>`).join('')}</div>
+    <h2 style="margin:0 0 4px;">${e.name}</h2>
+    <div style="color:var(--text-faint); font-size:0.78rem; margin-bottom:18px; text-transform:capitalize;">${e.diff}</div>
+    <div class="stat-grid" style="margin-bottom:18px;">
+      <div class="stat-tile"><div class="val">${e.sets}</div><div class="lab">Séries</div></div>
+      <div class="stat-tile"><div class="val">${e.reps}</div><div class="lab">Repetições</div></div>
+      <div class="stat-tile"><div class="val">${e.rest}s</div><div class="lab">Descanso</div></div>
+      <div class="stat-tile"><div class="val">${e.duration}m</div><div class="lab">Duração</div></div>
+    </div>
+    <div class="section-title" style="margin-top:0;">Descrição</div>
+    <p style="font-size:0.88rem; color:var(--text-dim); margin:0 0 14px;">${e.desc}</p>
+    <div class="section-title">Objetivo</div>
+    <p style="font-size:0.88rem; color:var(--text-dim); margin:0 0 14px;">${e.goal}</p>
+    <div class="section-title">Equipamento</div>
+    <div class="chip-row">${e.equip.map(eq=>`<span class="tag">${EQUIPMENT.find(x=>x.id===eq)?.label||eq}</span>`).join('')}</div>
+  `);
+}
+
+/* ------------------------------ History tab ------------------------------ */
+
+function renderHistory(){
+  const y=calMonth.getFullYear(), m=calMonth.getMonth();
+  const first=new Date(y,m,1);
+  const startPad = (first.getDay()+6)%7; // Monday-first
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const monthLabel = calMonth.toLocaleDateString('pt-PT',{month:'long', year:'numeric'});
+
+  let cells="";
+  for(let i=0;i<startPad;i++) cells+=`<div></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateObj=new Date(y,m,d);
+    const key=dateKey(dateObj);
+    const log=DATA.logs[key];
+    const isToday = key===todayKey();
+    let color="transparent";
+    if(log){
+      if(log.pain>0) color="var(--coral)";
+      else if(log.didPlayPadel) color="var(--sky)";
+      else if(log.didTrain) color="var(--accent)";
+      else color="var(--amber)";
+    }
+    cells+=`<div class="cal-day ${isToday?'today':''}"><span>${d}</span><span class="mark" style="background:${color};"></span></div>`;
+  }
+
+  return `
+    <div class="card">
+      <div class="row" style="margin-bottom:14px;">
+        <button class="btn-ghost btn" style="width:auto; padding:8px 14px;" onclick="shiftMonth(-1)">‹</button>
+        <div style="font-weight:700; text-transform:capitalize;">${monthLabel}</div>
+        <button class="btn-ghost btn" style="width:auto; padding:8px 14px;" onclick="shiftMonth(1)">›</button>
+      </div>
+      <div class="cal-grid">${cells}</div>
+      <div class="cal-legend">
+        <span><span class="legend-dot" style="background:var(--sky);"></span>Jogo</span>
+        <span><span class="legend-dot" style="background:var(--accent);"></span>Treino</span>
+        <span><span class="legend-dot" style="background:var(--amber);"></span>Descanso</span>
+        <span><span class="legend-dot" style="background:var(--coral);"></span>Dor</span>
+      </div>
+    </div>
+  `;
+}
+function shiftMonth(delta){ calMonth.setMonth(calMonth.getMonth()+delta); render(); }
+
+/* ------------------------------ Stats tab --------------------------------- */
+
+function renderStats(){
+  const logs = Object.values(DATA.logs).sort((a,b)=>a.date.localeCompare(b.date));
+  const last30 = logs.slice(-30);
+  const totalHours = last30.reduce((s,l)=>s+l.padelHours,0);
+  const trainDays = last30.filter(l=>l.didTrain).length;
+  const restDays = last30.filter(l=>!l.didTrain && !l.didPlayPadel).length;
+  const streak = computeStreak(logs);
+
+  return `
+    <div class="stat-grid" style="margin-bottom:18px;">
+      <div class="stat-tile"><div class="val">${totalHours.toFixed(1)}h</div><div class="lab">Horas de padel (30d)</div></div>
+      <div class="stat-tile"><div class="val">${trainDays}</div><div class="lab">Dias de treino (30d)</div></div>
+      <div class="stat-tile"><div class="val">${restDays}</div><div class="lab">Dias de descanso (30d)</div></div>
+      <div class="stat-tile"><div class="val">${streak}</div><div class="lab">Sequência atual</div></div>
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-top:0;">Energia ao longo do tempo</div>
+      ${lineChart(last30.map(l=>l.energy), 0, 10)}
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-top:0;">Dor ao longo do tempo</div>
+      ${barChart(last30.map(l=>l.pain), 0, 7, 'var(--coral)')}
+    </div>
+    <div class="card">
+      <div class="section-title" style="margin-top:0;">Horas de padel por semana</div>
+      ${barChart(weeklyBuckets(last30,'padelHours'), 0, null, 'var(--sky)')}
+    </div>
+  `;
+}
+function computeStreak(logs){
+  const set = new Set(logs.filter(l=>l.didTrain||l.didPlayPadel).map(l=>l.date));
+  let streak=0; let cur=new Date(); cur.setHours(0,0,0,0);
+  while(set.has(dateKey(cur))){ streak++; cur.setDate(cur.getDate()-1); }
+  return streak;
+}
+function weeklyBuckets(logs, field){
+  const buckets={};
+  logs.forEach(l=>{
+    const d=new Date(l.date); const onejan=new Date(d.getFullYear(),0,1);
+    const week=Math.ceil((((d-onejan)/86400000)+onejan.getDay()+1)/7);
+    const key=d.getFullYear()+'-W'+week;
+    buckets[key]=(buckets[key]||0)+(l[field]||0);
+  });
+  return Object.keys(buckets).sort().map(k=>buckets[k]);
+}
+function lineChart(values, min, max){
+  if(!values.length) return `<div class="empty" style="padding:24px;">Ainda sem dados.</div>`;
+  const w=280,h=110,pad=6;
+  const lo = min ?? Math.min(...values), hi = max ?? Math.max(...values,1);
+  const pts = values.map((v,i)=>{
+    const x = pad + i*((w-2*pad)/Math.max(1,values.length-1));
+    const y = h-pad - ((v-lo)/((hi-lo)||1))*(h-2*pad);
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function barChart(values, min, max, color){
+  if(!values.length || values.every(v=>!v)) return `<div class="empty" style="padding:24px;">Ainda sem dados.</div>`;
+  const w=280,h=110,pad=4;
+  const hi = max ?? Math.max(...values,1);
+  const bw = (w-2*pad)/values.length;
+  const bars = values.map((v,i)=>{
+    const bh = ((v)/hi)*(h-2*pad);
+    const x = pad + i*bw + bw*0.15;
+    const y = h-pad-bh;
+    return `<rect x="${x}" y="${y}" width="${bw*0.7}" height="${Math.max(bh,1)}" rx="2" fill="${color}"/>`;
+  }).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
+}
+
+/* ------------------------------ Settings tab ------------------------------ */
+
+function renderSettings(){
+  return `
+    <div class="section-title" style="margin-top:0;">Objetivos de treino</div>
+    <p style="font-size:0.82rem; color:var(--text-dim); margin:0 0 14px;">O plano diário prioriza exercícios alinhados com estes objetivos, sempre que a condição física do dia permitir.</p>
+    <div class="chip-row" id="goals-select" style="margin-bottom:24px;">
+      ${GOALS.map(g=>`<span class="chip ${DATA.goals.includes(g.id)?'selected':''}" data-val="${g.id}" onclick="toggleGoal('${g.id}')">${g.label}</span>`).join('')}
+    </div>
+
+    <div class="section-title">Dados</div>
+    <div class="card row">
+      <span style="font-size:0.85rem;">Check-ins guardados</span>
+      <span style="font-family:'Space Grotesk'; font-weight:700;">${Object.keys(DATA.checkins).length}</span>
+    </div>
+    <button class="btn btn-danger" style="margin-top:12px;" onclick="resetData()">Apagar todos os dados</button>
+    <button class="btn btn-ghost" style="margin-top:10px;" onclick="exportData()">Exportar dados (backup)</button>
+    <label class="btn btn-ghost" style="margin-top:10px; display:flex;">
+      Importar dados
+      <input type="file" accept="application/json" id="import-file" style="display:none;">
+    </label>
+
+    <div class="section-title">Sobre</div>
+    <div class="card">
+      <div class="row" style="margin-bottom:8px;"><b>Padel Coach AI</b><span style="color:var(--text-dim); font-size:0.8rem;">Web · 1.0</span></div>
+      <p style="font-size:0.8rem; color:var(--text-dim); margin:0;">App de treino pessoal para padel. Todas as recomendações são geradas por regras locais — sem IA online, sem contas. Os dados ficam guardados neste dispositivo, neste Safari.</p>
+    </div>
+  `;
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `padel-coach-backup-${todayKey()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+function bindImportInput(){
+  const input = document.getElementById('import-file');
+  if(!input) return;
+  input.onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(!parsed.checkins || !parsed.plans || !parsed.logs){ throw new Error('formato inválido'); }
+        DATA = parsed;
+        await saveData();
+        render();
+        showToast('Dados importados com sucesso.');
+      }catch(err){
+        showToast('Este ficheiro não é um backup válido do Padel Coach AI.');
+      }
+    };
+    reader.readAsText(file);
+  };
+}
+function toggleGoal(id){
+  if(DATA.goals.includes(id)) DATA.goals = DATA.goals.filter(g=>g!==id);
+  else DATA.goals.push(id);
+  saveData();
+  render();
+}
+async function resetData(){
+  if(!confirm('Apagar todos os check-ins, planos e histórico?')) return;
+  DATA = structuredClone(DEFAULT_DATA);
+  await saveData();
+  render();
+}
+
+/* ------------------------------ Modal helper ------------------------------ */
+
+function showModal(html){
+  const back=document.createElement('div');
+  back.className='modal-backdrop';
+  back.id='modal-backdrop';
+  back.onclick=(e)=>{ if(e.target===back) closeModal(); };
+  const sheet=document.createElement('div');
+  sheet.className='modal-sheet';
+  sheet.innerHTML=html;
+  back.appendChild(sheet);
+  document.body.appendChild(back);
+}
+function closeModal(){
+  document.getElementById('modal-backdrop')?.remove();
+}
+function afterRender(){
+  const search=document.getElementById('lib-search');
+  if(search){ search.oninput=(e)=>{ librarySearch=e.target.value; render(); setTimeout(()=>document.getElementById('lib-search')?.focus(),0); }; }
+  bindImportInput();
+}
+
+/* ------------------------------ Boot --------------------------------------- */
+(async function boot(){
+  document.getElementById('view').innerHTML = `<div class="empty">A carregar…</div>`;
+  await loadData();
+  render();
+})();
+</script>
+</body>
+</html>
