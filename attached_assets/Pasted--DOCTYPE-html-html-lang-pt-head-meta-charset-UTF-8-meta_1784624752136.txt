@@ -182,7 +182,7 @@
 /* ======================================================================
    PADEL COACH AI — self-contained web app
    Regras 100% locais (sem IA online, sem chamadas externas de lógica).
-   Persistência via localStorage.
+   Persistência via window.storage (a API de armazenamento do artifact).
    ====================================================================== */
 
 /* ---------------------------- Domain data ---------------------------- */
@@ -408,14 +408,14 @@ async function loadData(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) DATA = JSON.parse(raw);
-  }catch(e){ /* first run */ }
+  }catch(e){ /* first run, or storage unavailable in this context */ }
   dataLoaded = true;
 }
 async function saveData(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DATA));
   }catch(e){
-    showToast('Não foi possível guardar os dados.');
+    showToast('Não foi possível guardar neste ambiente. Se estás a testar dentro do Claude, guarda o ficheiro e abre-o no Safari do iPhone — aí a gravação funciona normalmente.');
   }
 }
 function showToast(msg){
@@ -858,7 +858,7 @@ function renderSettings(){
     <div class="section-title">Sobre</div>
     <div class="card">
       <div class="row" style="margin-bottom:8px;"><b>Padel Coach AI</b><span style="color:var(--text-dim); font-size:0.8rem;">Web · 1.0</span></div>
-      <p style="font-size:0.8rem; color:var(--text-dim); margin:0;">App de treino pessoal para padel. Todas as recomendações são geradas por regras locais — sem IA online, sem contas. Os dados ficam guardados neste dispositivo.</p>
+      <p style="font-size:0.8rem; color:var(--text-dim); margin:0;">App de treino pessoal para padel. Todas as recomendações são geradas por regras locais — sem IA online, sem contas. Os dados ficam guardados neste dispositivo, neste Safari.</p>
     </div>
   `;
 }
