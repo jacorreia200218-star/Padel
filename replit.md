@@ -27,12 +27,13 @@ Toda a app está em `artifacts/padel-coach/`:
 | `src/data/exercises.ts` | Porta de entrada dos dados: categorias, zonas de dor, equipamento, objetivos, escalas e dicas |
 | `src/data/library/` | **Fonte de verdade** dos 92 exercícios, por família (mobilidade, força, core, explosão/agilidade, prevenção, recuperação) |
 | `src/data/types.ts` | O que um exercício tem: execução, erros comuns, benefícios, cuidados, alternativas |
+| `src/data/zones.ts` | Programas por zona do corpo e os sinais de alerta da página de dores |
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
 | `src/engine/session.ts` | O treino a decorrer: onde vai, substituições, alternativas |
 | `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
 | `src/store/migrate.ts` | Conversão de dados gravados por versões anteriores do formato |
-| `src/tabs/` | Os cinco separadores (Hoje, Biblioteca, Histórico, Estatísticas, Definições) |
+| `src/tabs/` | Os cinco separadores (Hoje, Exercícios, Dores, Histórico, Definições) |
 | `src/app.css` | Estilos da app. `src/index.css` tem só os tokens de cor e o Tailwind |
 
 ## Architecture decisions
@@ -57,6 +58,9 @@ Toda a app está em `artifacts/padel-coach/`:
   e explosão mas mantém força moderada. Regras novas devem entrar dentro do
   estado a que pertencem, não ao lado dele — senão volta a ser possível sair um
   treino pesado num dia mau.
+- **A barra tem cinco separadores e não deve crescer.** Ao sexto, os rótulos
+  deixam de caber num telemóvel. As estatísticas foram para dentro do Histórico
+  precisamente por isso.
 - **Sinais de alerta não são diagnóstico.** `redFlagsFor()` só reconhece
   situações em que continuar sozinho não é boa ideia (dor ≥ 7/10, dor em
   repouso, dor de semanas a piorar) e recomenda avaliação profissional. A app
@@ -75,8 +79,13 @@ Cinco separadores:
 - **Biblioteca** — os 92 exercícios, com pesquisa e filtro por categoria. Cada
   ficha tem execução passo a passo, erros comuns, para que serve, cuidados
   quando aplicável, alternativas navegáveis e link de vídeo.
-- **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso, dor).
-- **Estatísticas** — horas de padel, dias de treino, sequência e gráficos a 30 dias.
+- **Dores** — escolhes uma zona do corpo e vês exercícios geralmente usados
+  para mobilidade, fortalecimento e prevenção nessa área, por ordem (primeiro
+  soltar, depois fortalecer), com dicas de autocuidado. Os sinais de alerta
+  estão sempre visíveis, escolhida ou não uma zona.
+- **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso,
+  dor), seguido das estatísticas: horas de padel, dias de treino, sequência e
+  gráficos a 30 dias.
 - **Definições** — objetivos de treino, exportar/importar backup, apagar dados.
 
 ## Gotchas

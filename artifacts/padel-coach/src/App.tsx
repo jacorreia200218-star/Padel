@@ -4,14 +4,14 @@ import { Toast } from './components/Toast';
 import {
   IconHistory,
   IconLibrary,
+  IconPain,
   IconSettings,
-  IconStats,
   IconToday,
 } from './components/icons';
 import { HistoryTab } from './tabs/HistoryTab';
 import { LibraryTab } from './tabs/LibraryTab';
+import { PainTab } from './tabs/PainTab';
 import { SettingsTab } from './tabs/SettingsTab';
-import { StatsTab } from './tabs/StatsTab';
 import { TodayTab } from './tabs/TodayTab';
 
 interface Tab {
@@ -21,11 +21,14 @@ interface Tab {
   View: ComponentType;
 }
 
+// Cinco é o máximo que cabe na barra sem os rótulos ficarem ilegíveis num
+// telemóvel. As estatísticas passaram para dentro do Histórico — são as duas
+// sobre o que já aconteceu — para abrir lugar à página de dores.
 const TABS: Tab[] = [
   { id: 'today', label: 'Hoje', Icon: IconToday, View: TodayTab },
-  { id: 'library', label: 'Biblioteca', Icon: IconLibrary, View: LibraryTab },
+  { id: 'library', label: 'Exercícios', Icon: IconLibrary, View: LibraryTab },
+  { id: 'pain', label: 'Dores', Icon: IconPain, View: PainTab },
   { id: 'history', label: 'Histórico', Icon: IconHistory, View: HistoryTab },
-  { id: 'stats', label: 'Estatísticas', Icon: IconStats, View: StatsTab },
   { id: 'settings', label: 'Definições', Icon: IconSettings, View: SettingsTab },
 ];
 

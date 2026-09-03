@@ -36,6 +36,16 @@ export function IconHistory(_: IconProps) {
   );
 }
 
+/** Penso rápido, para a área de dores e prevenção. */
+export function IconPain(_: IconProps) {
+  return (
+    <Svg>
+      <rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)" />
+      <path d="M10 10l4 4M14 10l-4 4" />
+    </Svg>
+  );
+}
+
 export function IconStats(_: IconProps) {
   return (
     <Svg>

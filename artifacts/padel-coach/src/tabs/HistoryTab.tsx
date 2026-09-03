@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { dateKey, todayKey, useStore } from '../store/useStore';
+import { StatsTab } from './StatsTab';
 
 export function HistoryTab() {
   const data = useStore();
@@ -33,8 +34,9 @@ export function HistoryTab() {
   };
 
   return (
-    <div className="card">
-      <div className="row" style={{ marginBottom: 14 }}>
+    <>
+      <div className="card">
+        <div className="row" style={{ marginBottom: 14 }}>
         <button
           className="btn btn-ghost"
           style={{ width: 'auto', padding: '8px 14px' }}
@@ -85,7 +87,10 @@ export function HistoryTab() {
           <span className="legend-dot" style={{ background: 'var(--coral)' }} />
           Dor
         </span>
+        </div>
       </div>
-    </div>
+
+      <StatsTab />
+    </>
   );
 }
