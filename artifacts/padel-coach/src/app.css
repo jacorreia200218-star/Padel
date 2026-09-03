@@ -1,0 +1,819 @@
+/* ==========================================================================
+   Componentes da app.
+
+   Portado de index.html — os nomes das classes e os valores são exactamente os
+   mesmos, para a versão React ficar visualmente idêntica à anterior.
+   ========================================================================== */
+
+:root,
+.dark {
+  --card: var(--card-bg);
+}
+
+.topbar {
+  padding: calc(env(safe-area-inset-top, 0px) + 18px) 20px 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(15, 32, 39, 0.88);
+  backdrop-filter: blur(14px);
+}
+.topbar .brand {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.topbar .brand .ball {
+  color: var(--accent);
+}
+.topbar .tabname {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+main {
+  flex: 1;
+  padding: 18px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  background: rgba(19, 44, 52, 0.92);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  padding: 8px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+  z-index: 10;
+}
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 2px;
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.tab-btn .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  margin-bottom: 1px;
+}
+.tab-btn.active {
+  color: var(--accent);
+}
+.tab-btn.active .dot {
+  background: var(--accent);
+}
+.tab-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ---------- blocos genéricos ---------- */
+
+.card {
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card.hi {
+  background: var(--card-hi);
+}
+.card.alert {
+  background: rgba(255, 122, 102, 0.09);
+  border-color: rgba(255, 122, 102, 0.35);
+}
+
+/* ---------- ficha de exercício ---------- */
+
+.body-text {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+/* O reset do Tailwind tira os marcadores às listas; aqui queremo-los de volta. */
+.steps {
+  list-style: decimal;
+}
+.bullets {
+  list-style: disc;
+}
+.steps,
+.bullets {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.steps li,
+.bullets li {
+  margin-bottom: 6px;
+}
+.steps li::marker {
+  color: var(--accent);
+  font-family: var(--app-font-display);
+  font-weight: 700;
+}
+.bullets li::marker {
+  color: var(--text-faint);
+}
+.disclaimer {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin: 22px 0 0;
+}
+
+/* ---------- ecrã de treino ---------- */
+
+.workout {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px
+    calc(env(safe-area-inset-bottom, 0px) + 20px);
+}
+.workout-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.workout-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.workout-count {
+  font-family: var(--app-font-display);
+  font-weight: 700;
+  color: var(--text-faint);
+  font-size: 0.86rem;
+}
+.progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+.workout-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 0;
+}
+.workout-name {
+  font-size: 1.7rem;
+  margin: 0 0 8px;
+  line-height: 1.15;
+}
+.workout-dose {
+  font-family: var(--app-font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.workout-level {
+  font-size: 0.74rem;
+  color: var(--accent);
+  margin: -8px 0 14px;
+}
+.workout-desc {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  margin: 0;
+  max-width: 320px;
+}
+.workout-equip {
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  margin-top: 12px;
+}
+.workout-steps {
+  text-align: left;
+  margin-top: 20px;
+  max-width: 320px;
+  font-size: 0.84rem;
+}
+.workout-caution {
+  margin-top: 16px;
+  max-width: 320px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--coral);
+  background: rgba(255, 122, 102, 0.09);
+  border: 1px solid rgba(255, 122, 102, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-align: left;
+}
+.workout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.workout-problem {
+  font-size: 0.8rem;
+  padding: 11px 16px;
+  color: var(--text-dim);
+}
+
+/* ---------- descanso ---------- */
+
+.rest-timer {
+  margin-top: 28px;
+  width: 100%;
+  max-width: 260px;
+}
+.rest-label {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+  font-weight: 700;
+}
+.rest-count {
+  font-family: var(--app-font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--sky);
+  line-height: 1.1;
+  margin: 2px 0 10px;
+}
+.rest-track {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.rest-fill {
+  height: 100%;
+  background: var(--sky);
+  border-radius: 3px;
+}
+
+/* ---------- dashboard ---------- */
+
+.greeting {
+  margin: 0 2px 14px;
+}
+.greeting-hello {
+  font-family: var(--app-font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.snapshot {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.snapshot-item {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  text-align: center;
+}
+.snapshot-emoji {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.snapshot-value {
+  font-family: var(--app-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.snapshot-value.alerta {
+  color: var(--coral);
+}
+.snapshot-label {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+  margin-top: 1px;
+  line-height: 1.3;
+}
+.snapshot-sub {
+  color: var(--text-faint);
+}
+
+/* ---------- semáforo do dia ---------- */
+
+.status-banner {
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid;
+  /* A cor de cada estado entra por --status, definida em .status-green/yellow/red. */
+  background: color-mix(in srgb, var(--status) 10%, transparent);
+  border-color: color-mix(in srgb, var(--status) 40%, transparent);
+}
+.status-green {
+  --status: var(--accent);
+}
+.status-yellow {
+  --status: var(--amber);
+}
+.status-red {
+  --status: var(--coral);
+}
+.status-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.status-dot {
+  font-size: 1rem;
+  line-height: 1;
+}
+.status-label {
+  font-family: var(--app-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--status);
+}
+.status-reason {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+  font-weight: 700;
+  margin: 22px 2px 10px;
+}
+.section-title:first-child {
+  margin-top: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.btn {
+  font-family: var(--app-font-display);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.btn-danger {
+  background: rgba(255, 122, 102, 0.12);
+  color: var(--coral);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.chip.selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.pain-zones .chip.selected {
+  background: var(--coral);
+  color: #2b0e08;
+  border-color: var(--coral);
+}
+/* Cansaço muscular em âmbar, dor a sério em coral — a mesma linguagem de cor
+   que a app já usava nas dicas de recuperação. */
+.muscular-zones .chip.selected {
+  background: var(--amber);
+  color: #3b2405;
+  border-color: var(--amber);
+}
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmented {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 2px;
+}
+.segmented .seg {
+  flex: 1;
+  text-align: center;
+  padding: 9px 4px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.segmented .seg.selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+label.field-label {
+  display: block;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+.slider-value {
+  font-family: var(--app-font-display);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.lib-search {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+  font-family: inherit;
+}
+
+.textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.measure-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.measure-input {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.measure-input input {
+  width: 100%;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--app-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  /* As setinhas do input numérico não cabem num campo desta largura. */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.measure-input input::-webkit-outer-spin-button,
+.measure-input input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.measure-input span {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty .big-emoji {
+  font-size: 2.4rem;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+/* ---------- modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 14, 17, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+}
+.modal-sheet {
+  background: var(--bg-2);
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: 22px 22px 0 0;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 20px 20px calc(30px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+}
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 auto 16px;
+}
+
+/* ---------- toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 96px;
+  max-width: 488px;
+  margin: 0 auto;
+  background: var(--card-hi);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- anel de prontidão ---------- */
+
+.ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ring-label-big {
+  font-family: var(--app-font-display);
+  font-size: 2rem;
+  font-weight: 700;
+}
+.ring-sub {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+/* ---------- cartão de exercício ---------- */
+
+.ex-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.ex-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(216, 255, 62, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--app-font-display);
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.ex-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.level-badge {
+  margin-left: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: rgba(216, 255, 62, 0.12);
+  border-radius: 5px;
+  padding: 2px 5px;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+.ex-meta {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.ex-time {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-family: var(--app-font-display);
+}
+
+/* ---------- calendário ---------- */
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+}
+.cal-day.today {
+  outline: 1.5px solid var(--accent);
+}
+.cal-day .mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 3px;
+}
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* ---------- a semana ---------- */
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.week-day {
+  text-align: center;
+  padding: 8px 2px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.week-day.hoje {
+  outline: 1.5px solid var(--accent);
+}
+.week-dow {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.week-mark {
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.week-empty {
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+.week-what {
+  font-size: 0.72rem;
+  min-height: 1em;
+}
+.week-legend {
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* ---------- estatísticas ---------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat-tile {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.stat-tile .val {
+  font-family: var(--app-font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.stat-tile .lab {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.chart-scale {
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+svg.chart {
+  width: 100%;
+  height: 130px;
+  overflow: visible;
+}
