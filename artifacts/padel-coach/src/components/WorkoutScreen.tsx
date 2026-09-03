@@ -105,6 +105,20 @@ export function WorkoutScreen({
           </div>
         )}
 
+        {/* Antes de começar mostramos como se faz; durante o exercício isso já
+            não interessa e só rouba espaço ao que importa. */}
+        {phase === 'ready' && (
+          <ol className="steps workout-steps">
+            {exercise.instructions.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        )}
+
+        {phase === 'ready' && exercise.cautions && (
+          <div className="workout-caution">⚠ {exercise.cautions}</div>
+        )}
+
         {phase === 'resting' && (
           <RestTimer seconds={exercise.rest} onDone={() => advance({ done: [...session.done, exercise.id] })} />
         )}

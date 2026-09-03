@@ -43,12 +43,21 @@ export function isFinished(s: Session): boolean {
   return s.index >= s.exerciseIds.length;
 }
 
+const DIFF_RANK: Record<Exercise['diff'], number> = {
+  beginner: 0,
+  intermediate: 1,
+  advanced: 2,
+};
+
 /**
  * Um exercício que sirva o mesmo propósito.
  *
- * Procuramos primeiro algo que partilhe categorias e não exija material que a
- * pessoa não tenha. `easier` limita a exercícios de dificuldade mais baixa —
- * é o que responde a "reduzir dificuldade" quando o exercício custa demais.
+ * Preferimos sempre as alternativas escritas à mão em `alts`: foram escolhidas
+ * por quem conhece o movimento e são melhores do que qualquer coincidência de
+ * categorias. Só quando nenhuma serve é que procuramos na biblioteca inteira.
+ *
+ * `easier` limita a dificuldades mais baixas — é o que responde a "reduzir
+ * dificuldade" quando o exercício custa demais mas não dói.
  */
 export function findAlternative(
   exercise: Exercise,
@@ -57,24 +66,30 @@ export function findAlternative(
   { easier = false }: { easier?: boolean } = {},
 ): Exercise | undefined {
   const equipSet = new Set(equipment.length ? equipment : ['bodyweight']);
-  const rank: Record<Exercise['diff'], number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
-  const candidates = EXERCISES.filter((e) => {
+  const usable = (e: Exercise) => {
     if (e.id === exercise.id || excludeIds.includes(e.id)) return false;
-    if (!e.cats.some((c) => exercise.cats.includes(c))) return false;
     const hasEquipment =
       e.equip.every((eq) => eq === 'bodyweight') || e.equip.some((eq) => equipSet.has(eq));
     if (!hasEquipment) return false;
-    if (easier && rank[e.diff] >= rank[exercise.diff]) return false;
+    if (easier && DIFF_RANK[e.diff] >= DIFF_RANK[exercise.diff]) return false;
     return true;
-  });
+  };
 
+  const declared = (exercise.alts ?? [])
+    .map((id) => EXERCISES.find((e) => e.id === id))
+    .filter((e): e is Exercise => Boolean(e) && usable(e!));
+  if (declared.length) return declared[0];
+
+  const candidates = EXERCISES.filter(
+    (e) => usable(e) && e.cats.some((c) => exercise.cats.includes(c)),
+  );
   if (!candidates.length) return undefined;
 
   // Entre os candidatos, o que partilha mais categorias com o original.
   return candidates.sort((a, b) => {
     const shared = (e: Exercise) => e.cats.filter((c) => exercise.cats.includes(c)).length;
-    return shared(b) - shared(a) || rank[a.diff] - rank[b.diff];
+    return shared(b) - shared(a) || DIFF_RANK[a.diff] - DIFF_RANK[b.diff];
   })[0];
 }
 

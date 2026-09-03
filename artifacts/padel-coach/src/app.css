@@ -106,6 +106,48 @@ main {
   border-color: rgba(255, 122, 102, 0.35);
 }
 
+/* ---------- ficha de exercício ---------- */
+
+.body-text {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+/* O reset do Tailwind tira os marcadores às listas; aqui queremo-los de volta. */
+.steps {
+  list-style: decimal;
+}
+.bullets {
+  list-style: disc;
+}
+.steps,
+.bullets {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.steps li,
+.bullets li {
+  margin-bottom: 6px;
+}
+.steps li::marker {
+  color: var(--accent);
+  font-family: var(--app-font-display);
+  font-weight: 700;
+}
+.bullets li::marker {
+  color: var(--text-faint);
+}
+.disclaimer {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin: 22px 0 0;
+}
+
 /* ---------- ecrã de treino ---------- */
 
 .workout {
@@ -185,6 +227,24 @@ main {
   font-size: 0.76rem;
   color: var(--text-faint);
   margin-top: 12px;
+}
+.workout-steps {
+  text-align: left;
+  margin-top: 20px;
+  max-width: 320px;
+  font-size: 0.84rem;
+}
+.workout-caution {
+  margin-top: 16px;
+  max-width: 320px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--coral);
+  background: rgba(255, 122, 102, 0.09);
+  border: 1px solid rgba(255, 122, 102, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-align: left;
 }
 .workout-actions {
   display: flex;

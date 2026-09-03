@@ -48,7 +48,9 @@ export function LibraryTab() {
         <div className="empty">Sem resultados.</div>
       )}
 
-      {open && <ExerciseModal exercise={open} onClose={() => setOpen(null)} />}
+      {open && (
+        <ExerciseModal exercise={open} onClose={() => setOpen(null)} onOpen={setOpen} />
+      )}
     </>
   );
 }

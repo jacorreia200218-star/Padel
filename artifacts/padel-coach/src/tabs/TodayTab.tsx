@@ -181,7 +181,11 @@ export function TodayTab() {
         />
       )}
       {openExercise && (
-        <ExerciseModal exercise={openExercise} onClose={() => setOpenExercise(null)} />
+        <ExerciseModal
+          exercise={openExercise}
+          onClose={() => setOpenExercise(null)}
+          onOpen={setOpenExercise}
+        />
       )}
       {workoutOpen && session && (
         <WorkoutScreen

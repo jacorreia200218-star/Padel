@@ -24,7 +24,9 @@ Toda a app está em `artifacts/padel-coach/`:
 
 | Ficheiro | O que é |
 |---|---|
-| `src/data/exercises.ts` | **Fonte de verdade** dos 62 exercícios, categorias, zonas de dor, equipamento, objetivos, escalas e dicas |
+| `src/data/exercises.ts` | Porta de entrada dos dados: categorias, zonas de dor, equipamento, objetivos, escalas e dicas |
+| `src/data/library/` | **Fonte de verdade** dos 92 exercícios, por família (mobilidade, força, core, explosão/agilidade, prevenção, recuperação) |
+| `src/data/types.ts` | O que um exercício tem: execução, erros comuns, benefícios, cuidados, alternativas |
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
 | `src/engine/session.ts` | O treino a decorrer: onde vai, substituições, alternativas |
@@ -70,7 +72,9 @@ Cinco separadores:
   raciocínio da escolha e dicas de recuperação por zona. Daí arranca o **treino
   guiado**: um exercício de cada vez, com temporizador de descanso e a opção de
   trocar, facilitar, saltar ou parar quando algo custa ou dói.
-- **Biblioteca** — os 62 exercícios, com pesquisa e filtro por categoria.
+- **Biblioteca** — os 92 exercícios, com pesquisa e filtro por categoria. Cada
+  ficha tem execução passo a passo, erros comuns, para que serve, cuidados
+  quando aplicável, alternativas navegáveis e link de vídeo.
 - **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso, dor).
 - **Estatísticas** — horas de padel, dias de treino, sequência e gráficos a 30 dias.
 - **Definições** — objetivos de treino, exportar/importar backup, apagar dados.
@@ -91,8 +95,12 @@ Cinco separadores:
 - **O temporizador de descanso conta pelo relógio, não somando ticks** — o
   telemóvel suspende `setInterval` com o ecrã bloqueado e o descanso sairia
   muito mais longo do que o real.
-- **Ao mudar `exercises.ts`, não reutilizar ids antigos com significado novo** —
-  `exerciseLastUsed` guarda ids e os planos antigos referenciam-nos.
+- **Não reutilizar ids de exercícios com significado novo** — `exerciseLastUsed`
+  guarda ids e os planos antigos referenciam-nos. Acrescenta-se um id novo.
+- **O texto dos exercícios é informação geral de treino, não clínica.** Os
+  campos `cautions` dizem o que evitar e quando parar; nunca nomeiam lesões nem
+  prometem que um exercício resolve alguma coisa. Manter esse registo ao
+  acrescentar exercícios.
 - **Alterar o formato de `AppData` exige migração**, senão quem já usa a app
   perde o histórico. A chave de `localStorage` é `padel-coach-ai-data`.
   Subir `DATA_VERSION`, acrescentar a conversão em `migrate.ts` e testar com
