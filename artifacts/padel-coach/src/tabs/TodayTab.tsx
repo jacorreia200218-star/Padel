@@ -17,6 +17,7 @@ import {
 import { WorkoutScreen } from '../components/WorkoutScreen';
 import { generatePlan, readinessScore, type Checkin, type Plan } from '../engine/planner';
 import { startSession, type Session } from '../engine/session';
+import { applyProgression, levelOf, recordSession } from '../engine/progression';
 import { todayKey, updateData, useStore } from '../store/useStore';
 
 export function TodayTab() {
@@ -73,7 +74,12 @@ export function TodayTab() {
   if (!plan) return <div className="empty">A gerar o plano…</div>;
 
   const rs = readinessScore(checkin);
-  const exList = plan.exerciseIds.map(exerciseById).filter((e): e is Exercise => Boolean(e));
+  // Os exercícios são mostrados já com a progressão de quem os faz, não com os
+  // valores de origem da biblioteca.
+  const exList = plan.exerciseIds
+    .map(exerciseById)
+    .filter((e): e is Exercise => Boolean(e))
+    .map((e) => applyProgression(e, levelOf(data.progress, e.id)));
 
   return (
     <>
@@ -130,7 +136,12 @@ export function TodayTab() {
 
       <div className="section-title">Exercícios de hoje</div>
       {exList.map((e) => (
-        <ExerciseCard key={e.id} exercise={e} onClick={() => setOpenExercise(e)} />
+        <ExerciseCard
+          key={e.id}
+          exercise={e}
+          level={levelOf(data.progress, e.id)}
+          onClick={() => setOpenExercise(e)}
+        />
       ))}
 
       <RecoveryTips plan={plan} />
@@ -191,6 +202,7 @@ export function TodayTab() {
         <WorkoutScreen
           session={session}
           equipment={checkin.equipment}
+          progress={data.progress}
           onUpdate={(next) => updateData((d) => void (d.session = next))}
           onFinish={(next) => {
             finishWorkout(next);
@@ -241,6 +253,13 @@ function finishWorkout(session: Session) {
     if (!checkin || !plan) return;
     plan.completed = true;
     d.session = { ...session, finishedAt: new Date().toISOString() };
+
+    const { progress, leveledUp } = recordSession(d.progress, session);
+    d.progress = progress;
+    if (leveledUp.length) {
+      const nomes = leveledUp.map((id) => exerciseById(id)?.name).filter(Boolean);
+      showToast(`Subiste de nível: ${nomes.join(', ')}`);
+    }
     // Um exercício que doeu hoje é tratado como usado agora, para descer na
     // ordem de escolha e não voltar já amanhã.
     session.painful.forEach((id) => {

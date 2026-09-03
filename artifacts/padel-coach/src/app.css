@@ -217,6 +217,11 @@ main {
   color: var(--accent);
   margin-bottom: 16px;
 }
+.workout-level {
+  font-size: 0.74rem;
+  color: var(--accent);
+  margin: -8px 0 14px;
+}
 .workout-desc {
   font-size: 0.9rem;
   color: var(--text-dim);
@@ -624,6 +629,19 @@ label.field-label {
 .ex-name {
   font-weight: 700;
   font-size: 0.9rem;
+}
+.level-badge {
+  margin-left: 6px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: rgba(216, 255, 62, 0.12);
+  border-radius: 5px;
+  padding: 2px 5px;
+  vertical-align: 1px;
+  white-space: nowrap;
 }
 .ex-meta {
   font-size: 0.74rem;

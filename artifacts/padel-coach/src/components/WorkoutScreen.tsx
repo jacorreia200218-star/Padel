@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { CATEGORY_LABEL, EQUIPMENT, type Exercise } from '../data/exercises';
+import { applyProgression, levelLabel, levelOf, type ExerciseProgress } from '../engine/progression';
 import {
   currentExercise,
   findAlternative,
@@ -16,6 +17,7 @@ type Phase = 'ready' | 'doing' | 'resting';
 interface WorkoutScreenProps {
   session: Session;
   equipment: string[];
+  progress: Record<string, ExerciseProgress>;
   onUpdate: (next: Session) => void;
   onFinish: (session: Session) => void;
   onClose: () => void;
@@ -24,6 +26,7 @@ interface WorkoutScreenProps {
 export function WorkoutScreen({
   session,
   equipment,
+  progress: exerciseProgress,
   onUpdate,
   onFinish,
   onClose,
@@ -31,10 +34,12 @@ export function WorkoutScreen({
   const [phase, setPhase] = useState<Phase>('ready');
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const exercise = currentExercise(session);
+  const base = currentExercise(session);
+  const level = base ? levelOf(exerciseProgress, base.id) : 0;
+  const exercise = base ? applyProgression(base, level) : undefined;
   const total = session.exerciseIds.length;
 
-  if (isFinished(session) || !exercise) {
+  if (isFinished(session) || !exercise || !base) {
     return <WorkoutDone session={session} onClose={onClose} />;
   }
 
@@ -95,6 +100,7 @@ export function WorkoutScreen({
         <div className="workout-dose">
           {exercise.sets} × {exercise.reps}
         </div>
+        {level > 0 && <div className="workout-level">nível {level} · {levelLabel(level)}</div>}
         <p className="workout-desc">{exercise.desc}</p>
 
         {exercise.equip.some((e) => e !== 'bodyweight') && (

@@ -36,6 +36,7 @@ Toda a app está em `artifacts/padel-coach/`:
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
 | `src/engine/session.ts` | O treino a decorrer: onde vai, substituições, alternativas |
+| `src/engine/progression.ts` | Progressão gradual: quando um exercício sobe de degrau e o que muda |
 | `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
 | `src/store/migrate.ts` | Conversão de dados gravados por versões anteriores do formato |
 | `src/tabs/` | Os cinco separadores (Hoje, Exercícios, Dores, Histórico, Perfil) |
@@ -71,6 +72,12 @@ Toda a app está em `artifacts/padel-coach/`:
 - **A barra tem cinco separadores e não deve crescer.** Ao sexto, os rótulos
   deixam de caber num telemóvel. As estatísticas foram para dentro do Histórico
   precisamente por isso.
+- **A progressão é uma regra, não aprendizagem.** Três conclusões sem problemas
+  sobem um degrau; dor faz recuar um. Cada degrau muda uma coisa de cada vez
+  (séries, depois descanso), nunca tudo ao mesmo tempo, e as repetições ficam
+  de fora porque são texto. Com um check-in por dia não há dados para inferir
+  seja o que for — mas há de sobra para contar até três, e isso é honesto,
+  explicável e reversível.
 - **Sinais de alerta não são diagnóstico.** `redFlagsFor()` só reconhece
   situações em que continuar sozinho não é boa ideia (dor ≥ 7/10, dor em
   repouso, dor de semanas a piorar) e recomenda avaliação profissional. A app

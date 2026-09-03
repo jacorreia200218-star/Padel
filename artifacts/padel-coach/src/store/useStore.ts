@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import { DEFAULT_PROFILE, type Profile } from '../data/profile';
 import type { Checkin } from '../engine/checkin';
 import type { Plan } from '../engine/planner';
+import type { ExerciseProgress } from '../engine/progression';
 import type { Session } from '../engine/session';
 import { migrateCheckin, migrateLog } from './migrate';
 
@@ -47,6 +48,8 @@ export interface AppData {
   logs: Record<string, Log>;
   goals: string[];
   exerciseLastUsed: Record<string, string>;
+  /** Progressão por exercício: quantas vezes foi concluído e em que degrau vai. */
+  progress: Record<string, ExerciseProgress>;
   /** Treino a decorrer, para sobreviver a fechar a app a meio. */
   session: Session | null;
 }
@@ -61,6 +64,7 @@ export const DEFAULT_DATA: AppData = {
   logs: {},
   goals: ['injuryPrevention'],
   exerciseLastUsed: {},
+  progress: {},
   session: null,
 };
 
