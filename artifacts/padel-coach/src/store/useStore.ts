@@ -29,7 +29,13 @@ export interface Log {
   pain: number;
 }
 
-export const DATA_VERSION = 2;
+/**
+ * Versão do formato dos dados guardados.
+ * 1 — original: escalas de 1 a 10, zonas de dor com dois estados
+ * 2 — check-in completo: escalas de 1 a 5, lesões detalhadas, sono em horas
+ * 3 — planos passam a ter o estado do dia (semáforo)
+ */
+export const DATA_VERSION = 3;
 
 export interface AppData {
   version: number;
@@ -52,24 +58,38 @@ export const DEFAULT_DATA: AppData = {
 };
 
 /**
- * Converte dados gravados por uma versão anterior. Os planos antigos são
- * descartados de propósito: são derivados do check-in e voltam a ser gerados
- * na hora, e converter um plano só para o mostrar no dia seguinte não compensa.
+ * Converte dados gravados por uma versão anterior, um degrau de cada vez.
+ *
+ * Aplicar cada passo só a quem vem de antes dele é o que impede conversões
+ * repetidas — correr a conversão das escalas duas vezes sobre os mesmos dados
+ * dividiria os valores a dobrar e estragava o histórico em silêncio.
+ *
+ * Os planos são descartados em vez de convertidos: são derivados do check-in e
+ * voltam a ser gerados ao abrir o dia, por isso convertê-los não compensa.
  */
 export function migrate(raw: AppData): AppData {
-  if (raw.version === DATA_VERSION) return raw;
+  if (raw.version >= DATA_VERSION) return raw;
 
-  const checkins: Record<string, Checkin> = {};
-  for (const [key, checkin] of Object.entries(raw.checkins ?? {})) {
-    checkins[key] = (checkin as Checkin).version === 2 ? checkin : migrateCheckin(checkin as never);
+  let data = raw;
+
+  if (data.version < 2) {
+    const checkins: Record<string, Checkin> = {};
+    for (const [key, checkin] of Object.entries(data.checkins ?? {})) {
+      checkins[key] = migrateCheckin(checkin as never);
+    }
+    const logs: Record<string, Log> = {};
+    for (const [key, log] of Object.entries(data.logs ?? {})) {
+      logs[key] = migrateLog(log);
+    }
+    data = { ...data, version: 2, checkins, logs };
   }
 
-  const logs: Record<string, Log> = {};
-  for (const [key, log] of Object.entries(raw.logs ?? {})) {
-    logs[key] = migrateLog(log);
+  if (data.version < 3) {
+    // Os planos da versão 2 não têm o estado do dia. Regenerar é trivial.
+    data = { ...data, version: 3, plans: {} };
   }
 
-  return { ...raw, version: DATA_VERSION, checkins, plans: {}, logs };
+  return { ...data, version: DATA_VERSION };
 }
 
 function readFromStorage(): { data: AppData; migrated: boolean } {

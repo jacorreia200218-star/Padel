@@ -14,12 +14,14 @@ import {
   type Category,
   type Exercise,
 } from '../data/exercises';
-import { deriveSignals, type Checkin, type Signals } from './checkin';
+import { deriveSignals, type Checkin, type Signals, type Status } from './checkin';
 
 export type { Checkin } from './checkin';
 
 export interface Plan {
   date: string;
+  status: Status;
+  statusReasons: string[];
   planType: string;
   focus: Category[];
   exerciseIds: string[];
@@ -49,6 +51,15 @@ export function generatePlan(
 
   const painZones = s.injuries.map((i) => i.zone);
 
+  // O que fica de fora sai directamente do semáforo: em vermelho nada de
+  // agressivo, em amarelo nada de impacto — mas força moderada continua a poder
+  // entrar, que é o que distingue "moderação" de "recuperação".
+  if (s.status === 'red') {
+    AGGRESSIVE_CATS.forEach((c) => excluded.add(c));
+  } else if (s.status === 'yellow') {
+    (['explosiveness', 'jumps', 'speed'] as Category[]).forEach((c) => excluded.add(c));
+  }
+
   if (painZones.length) {
     reasoning.push(
       `Dor (não apenas cansaço) em ${painZones.map(zoneLabel).join(', ')}: a evitar exercícios agressivos, priorizando reabilitação.`,
@@ -63,10 +74,6 @@ export function generatePlan(
     reasoning.push(
       `Cansaço muscular em ${s.muscularZones.map(zoneLabel).join(', ')}: incluímos alongamentos/recuperação extra para essas zonas, sem eliminar o treino do dia.`,
     );
-  }
-  if (s.highFatigue || s.highSoreness || s.poorSleep) {
-    reasoning.push('Sinais de fadiga elevada, dor muscular alta ou sono fraco: prioridade para recuperação.');
-    AGGRESSIVE_CATS.forEach((c) => excluded.add(c));
   }
   if (s.yesterdayCats.includes('strength')) {
     excluded.add('strength');
@@ -98,6 +105,8 @@ export function generatePlan(
 
   return {
     date: checkin.date,
+    status: s.status,
+    statusReasons: s.statusReasons,
     planType,
     focus,
     exerciseIds: chosen.map((e) => e.id),
@@ -110,40 +119,77 @@ export function generatePlan(
   };
 }
 
+/**
+ * O tipo de plano do dia.
+ *
+ * O semáforo manda: em vermelho nunca sai um treino com carga, por muito que
+ * o resto do check-in pareça bom. Dentro de cada estado, as regras afinam
+ * consoante o que vem aí hoje e o que ficou de ontem.
+ */
 function choosePlanType(
   s: Signals,
   forced: Set<Category>,
   reasoning: string[],
 ): { planType: string; focus: Category[] } {
+  // Vermelho — nada de carga nova.
+  if (s.status === 'red') {
+    if (s.redFlags.length) {
+      reasoning.push(
+        'Pelo que descreveste, hoje não faz sentido treinar por conta própria: fica só respiração e mobilidade muito suave, e procura avaliação.',
+      );
+      return { planType: 'Cuidado', focus: ['breathing', 'stretching'] };
+    }
+    if (s.injuries.length) {
+      const focus: Category[] = ['rehabilitation', 'mobility', 'stretching', ...forced];
+      reasoning.push('Dor localizada a contar: sessão de reabilitação e mobilidade, sem nada que force a zona.');
+      return { planType: 'Reabilitação', focus };
+    }
+    reasoning.push('O corpo está a pedir descanso: hoje só recuperação, mobilidade leve e respiração.');
+    return { planType: 'Recuperação', focus: ['recovery', 'stretching', 'mobility', 'breathing'] };
+  }
+
+  // Um torneio manda mais do que o amarelo: nunca se chega lá com carga nova.
   if (s.highStakes) {
     reasoning.push('Torneio hoje: apenas mobilidade, ativação, alongamentos e respiração — sem carga nova.');
     return { planType: 'Ativação Pré-Jogo', focus: ['mobility', 'activation', 'stretching', 'breathing'] };
   }
-  if (s.injuries.length) {
-    const focus: Category[] = ['rehabilitation', 'mobility', 'stretching', ...forced];
-    if (s.playsToday) focus.push('activation');
-    return { planType: 'Reabilitação', focus };
+
+  // Amarelo — treina, mas sem impacto nem carga pesada.
+  if (s.status === 'yellow') {
+    if (s.injuries.length) {
+      const focus: Category[] = ['rehabilitation', 'mobility', 'stretching', ...forced];
+      if (s.playsToday) focus.push('activation');
+      return { planType: 'Reabilitação', focus };
+    }
+    if (s.intenseYesterday && s.playsToday) {
+      reasoning.push('Esforçaste-te bastante ontem e voltas a jogar hoje: recuperação ativa e ativação — sem força.');
+      return { planType: 'Recuperação', focus: ['mobility', 'stretching', 'recovery', 'activation'] };
+    }
+    if (s.muscularZones.length && !s.playsToday && s.playedPadelYesterday) {
+      reasoning.push('Cansaço muscular localizado e sem jogo hoje: dia de recuperação focado nessas zonas.');
+      return { planType: 'Recuperação', focus: ['stretching', 'recovery', 'mobility'] };
+    }
+    if (s.playsToday) {
+      reasoning.push('Vais jogar hoje e o corpo não está a 100%: ativação leve e footwork, sem gastar antes do jogo.');
+      return { planType: 'Manutenção Leve', focus: ['mobility', 'activation', 'footwork', 'stretching'] };
+    }
+    reasoning.push('Dia de moderação: mobilidade, core e prevenção — sem saltos, sprints nem carga pesada.');
+    return {
+      planType: 'Treino Moderado',
+      focus: ['mobility', 'core', 'stability', 'injuryPrevention', 'stretching'],
+    };
   }
-  if (s.muscularZones.length && !s.playsToday && s.playedPadelYesterday) {
-    reasoning.push('Cansaço muscular localizado e sem jogo hoje: dia de recuperação focado nessas zonas.');
-    return { planType: 'Recuperação', focus: ['stretching', 'recovery', 'mobility'] };
-  }
-  if (s.intenseYesterday && s.playsToday) {
-    reasoning.push('Esforçaste-te bastante ontem e voltas a jogar hoje: recuperação ativa e ativação — sem força.');
-    return { planType: 'Recuperação', focus: ['mobility', 'stretching', 'recovery', 'activation'] };
-  }
-  if (s.highFatigue || s.highSoreness || s.poorSleep) {
-    return { planType: 'Recuperação', focus: ['recovery', 'mobility', 'stretching', 'breathing'] };
-  }
-  if (!s.intenseYesterday && !s.playsToday && s.readiness >= 7) {
-    reasoning.push('Descansaste ontem, não jogas hoje e a energia está alta: dia ideal para força, explosão e core.');
-    return { planType: 'Força e Potência', focus: ['strength', 'explosiveness', 'core', 'balance'] };
-  }
+
+  // Verde — pode treinar a sério.
   if (s.playsToday) {
     reasoning.push('Vais jogar hoje: ativação leve e footwork, mantendo o corpo fresco.');
     return { planType: 'Manutenção Leve', focus: ['mobility', 'activation', 'footwork', 'stretching'] };
   }
-  reasoning.push('Dia sem jogo nem sinais de alarme: treino equilibrado.');
+  if (!s.intenseYesterday) {
+    reasoning.push('Descansaste ontem, não jogas hoje e a energia está alta: dia ideal para força, explosão e core.');
+    return { planType: 'Força e Potência', focus: ['strength', 'explosiveness', 'core', 'balance'] };
+  }
+  reasoning.push('Estás bem, mas ontem foi puxado: treino equilibrado em vez de carga máxima.');
   return { planType: 'Treino Equilibrado', focus: ['mobility', 'core', 'stability', 'agility'] };
 }
 

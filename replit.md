@@ -49,6 +49,11 @@ Toda a app está em `artifacts/padel-coach/`:
   recolhe respostas humanas (escalas de 1 a 5 com rótulo, níveis de dor); o
   motor precisa de sinais grosseiros. A tradução está toda em `deriveSignals()`,
   para os dois lados poderem mudar sem se partirem um ao outro.
+- **O semáforo manda no plano.** `computeStatus()` decide verde/amarelo/vermelho
+  e o motor obedece: vermelho nunca produz carga, amarelo corta saltos, sprints
+  e explosão mas mantém força moderada. Regras novas devem entrar dentro do
+  estado a que pertencem, não ao lado dele — senão volta a ser possível sair um
+  treino pesado num dia mau.
 - **Sinais de alerta não são diagnóstico.** `redFlagsFor()` só reconhece
   situações em que continuar sozinho não é boa ideia (dor ≥ 7/10, dor em
   repouso, dor de semanas a piorar) e recomenda avaliação profissional. A app
@@ -58,9 +63,10 @@ Toda a app está em `artifacts/padel-coach/`:
 
 Cinco separadores:
 
-- **Hoje** — check-in diário (jogo previsto, treino de ontem, energia, dor
-  muscular, cansaço, sono, zonas com dor, tempo e material disponível) e o plano
-  resultante, com o raciocínio e dicas de recuperação por zona.
+- **Hoje** — check-in diário (jogo previsto, sono, energia, cansaço, dores
+  musculares, dor por zona com triagem, atividade de ontem, tempo e material) e,
+  a partir dele, o **estado do dia** em semáforo 🟢🟡🔴, o plano resultante, o
+  raciocínio da escolha e dicas de recuperação por zona.
 - **Biblioteca** — os 62 exercícios, com pesquisa e filtro por categoria.
 - **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso, dor).
 - **Estatísticas** — horas de padel, dias de treino, sequência e gráficos a 30 dias.

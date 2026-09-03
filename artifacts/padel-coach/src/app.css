@@ -105,6 +105,48 @@ main {
   background: rgba(255, 122, 102, 0.09);
   border-color: rgba(255, 122, 102, 0.35);
 }
+
+/* ---------- semáforo do dia ---------- */
+
+.status-banner {
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid;
+  /* A cor de cada estado entra por --status, definida em .status-green/yellow/red. */
+  background: color-mix(in srgb, var(--status) 10%, transparent);
+  border-color: color-mix(in srgb, var(--status) 40%, transparent);
+}
+.status-green {
+  --status: var(--accent);
+}
+.status-yellow {
+  --status: var(--amber);
+}
+.status-red {
+  --status: var(--coral);
+}
+.status-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.status-dot {
+  font-size: 1rem;
+  line-height: 1;
+}
+.status-label {
+  font-family: var(--app-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--status);
+}
+.status-reason {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
 .section-title {
   font-size: 0.72rem;
   text-transform: uppercase;

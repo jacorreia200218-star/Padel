@@ -1,5 +1,13 @@
-/** Anel de prontidão: 0 a 1 do círculo preenchido. */
-export function ReadinessRing({ pct }: { pct: number }) {
+import type { Status } from '../engine/checkin';
+
+const STATUS_COLOR: Record<Status, string> = {
+  green: 'var(--accent)',
+  yellow: 'var(--amber)',
+  red: 'var(--coral)',
+};
+
+/** Anel de prontidão: 0 a 1 do círculo preenchido, na cor do estado do dia. */
+export function ReadinessRing({ pct, status = 'green' }: { pct: number; status?: Status }) {
   const r = 34;
   const c = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(1, pct));
@@ -10,7 +18,7 @@ export function ReadinessRing({ pct }: { pct: number }) {
         cx="42"
         cy="42"
         r={r}
-        stroke="var(--accent)"
+        stroke={STATUS_COLOR[status]}
         strokeWidth="7"
         fill="none"
         strokeDasharray={c}

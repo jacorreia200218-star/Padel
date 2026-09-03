@@ -83,7 +83,18 @@ export function emptyCheckin(date: string): Checkin {
  * Sinais derivados do check-in, na forma que o motor de decisão consome.
  * Manter esta camada evita espalhar limiares mágicos pelo código todo.
  */
+/**
+ * Estado do dia.
+ * - `green`: treinar normalmente
+ * - `yellow`: treinar com moderação — menos volume, sem saltos nem sprints
+ * - `red`: recuperação e cuidado — nada de carga, e às vezes procurar ajuda
+ */
+export type Status = 'green' | 'yellow' | 'red';
+
 export interface Signals {
+  status: Status;
+  /** Porque é que o dia ficou neste estado, em linguagem corrente. */
+  statusReasons: string[];
   /** 0-10, quanto maior melhor. */
   readiness: number;
   poorSleep: boolean;
@@ -137,6 +148,47 @@ export function redFlagsFor(c: Checkin): string[] {
   return [...new Set(flags)];
 }
 
+/** A dor mais forte reportada hoje, 0 se não houver nenhuma. */
+export function worstPain(c: Checkin): number {
+  return c.injuries.reduce((max, i) => Math.max(max, i.intensity), 0);
+}
+
+/**
+ * Estado do dia e as razões que o justificam.
+ *
+ * A ordem importa: basta uma condição de vermelho para o dia ser vermelho,
+ * mesmo que tudo o resto esteja bem. Recolhemos à mesma todas as razões, para
+ * a app poder explicar a decisão em vez de a impor.
+ */
+function computeStatus(
+  c: Checkin,
+  readiness: number,
+  soreness: number,
+  redFlags: string[],
+  poorSleep: boolean,
+): { status: Status; statusReasons: string[] } {
+  const pain = worstPain(c);
+  const red: string[] = [];
+  const yellow: string[] = [];
+
+  if (redFlags.length) red.push('Há sinais que merecem avaliação profissional.');
+  if (pain >= 5) red.push(`Dor de ${pain}/10 numa zona localizada.`);
+  if (soreness >= 8) red.push('Dores musculares muito fortes.');
+  if (c.energy <= 2 && c.fatigue >= 4) red.push('Energia no fundo e cansaço elevado.');
+  if (readiness < 4) red.push('A prontidão de hoje está muito baixa.');
+
+  if (pain > 0) yellow.push(`Dor de ${pain}/10 — evitamos o que possa agravar a zona.`);
+  if (soreness >= 4) yellow.push('Dores musculares a contar.');
+  if (poorSleep) yellow.push('Dormiste pouco ou mal.');
+  if (c.fatigue >= 4) yellow.push('Cansaço elevado.');
+  if (c.energy <= 2) yellow.push('Energia baixa.');
+  if (readiness < 6.5) yellow.push('A prontidão de hoje está abaixo do habitual.');
+
+  if (red.length) return { status: 'red', statusReasons: red };
+  if (yellow.length) return { status: 'yellow', statusReasons: yellow };
+  return { status: 'green', statusReasons: ['Boa recuperação: podes treinar normalmente.'] };
+}
+
 export function deriveSignals(c: Checkin): Signals {
   const activity = YESTERDAY_ACTIVITIES.find((a) => a.id === c.yesterday.type);
   const soreness = sorenessScore(c);
@@ -153,9 +205,15 @@ export function deriveSignals(c: Checkin): Signals {
         10,
     ) / 10;
 
+  const poorSleep = c.sleepQuality <= 2 || c.sleepHours < 6;
+  const redFlags = redFlagsFor(c);
+  const { status, statusReasons } = computeStatus(c, readiness, soreness, redFlags, poorSleep);
+
   return {
+    status,
+    statusReasons,
     readiness,
-    poorSleep: c.sleepQuality <= 2 || c.sleepHours < 6,
+    poorSleep,
     highFatigue: c.fatigue >= 4,
     highSoreness: soreness >= 7,
     playsToday: c.playingToday !== 'none',
@@ -165,6 +223,18 @@ export function deriveSignals(c: Checkin): Signals {
     yesterdayCats: activity?.cats ?? [],
     injuries: c.injuries,
     muscularZones: c.muscularZones,
-    redFlags: redFlagsFor(c),
+    redFlags,
   };
 }
+
+export const STATUS_LABEL: Record<Status, string> = {
+  green: 'Treinar normalmente',
+  yellow: 'Treinar com moderação',
+  red: 'Recuperação e cuidado',
+};
+
+export const STATUS_DOT: Record<Status, string> = {
+  green: '🟢',
+  yellow: '🟡',
+  red: '🔴',
+};

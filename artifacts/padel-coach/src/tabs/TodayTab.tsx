@@ -4,6 +4,7 @@ import { CheckinModal } from '../components/CheckinModal';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseModal } from '../components/ExerciseModal';
 import { ReadinessRing } from '../components/ReadinessRing';
+import { StatusBanner } from '../components/StatusBanner';
 import { showToast } from '../components/Toast';
 import {
   CATEGORY_LABEL,
@@ -72,6 +73,8 @@ export function TodayTab() {
 
   return (
     <>
+      <StatusBanner status={plan.status} reasons={plan.statusReasons} />
+
       {plan.redFlags?.length > 0 && (
         <div className="card alert">
           <b style={{ color: 'var(--coral)', fontSize: '0.88rem' }}>
@@ -91,7 +94,7 @@ export function TodayTab() {
 
       <div className="card hi">
         <div className="ring-wrap">
-          <ReadinessRing pct={rs / 10} />
+          <ReadinessRing pct={rs / 10} status={plan.status} />
           <div>
             <div className="ring-label-big">{plan.planType}</div>
             <div className="ring-sub">
