@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { CheckinModal } from '../components/CheckinModal';
+import { DailySnapshot, Greeting } from '../components/Dashboard';
 import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseModal } from '../components/ExerciseModal';
 import { ReadinessRing } from '../components/ReadinessRing';
@@ -18,6 +19,7 @@ import { WorkoutScreen } from '../components/WorkoutScreen';
 import { generatePlan, readinessScore, type Checkin, type Plan } from '../engine/planner';
 import { startSession, type Session } from '../engine/session';
 import { applyProgression, levelOf, recordSession } from '../engine/progression';
+import { worstPain } from '../engine/checkin';
 import { todayKey, updateData, useStore } from '../store/useStore';
 
 export function TodayTab() {
@@ -41,6 +43,7 @@ export function TodayTab() {
   if (!checkin) {
     return (
       <>
+        <Greeting name={data.profile.name} />
         <div className="empty card hi">
           <span className="big-emoji">🎾</span>
           <h3 style={{ margin: '0 0 8px' }}>Ainda sem check-in hoje</h3>
@@ -83,7 +86,9 @@ export function TodayTab() {
 
   return (
     <>
+      <Greeting name={data.profile.name} />
       <StatusBanner status={plan.status} reasons={plan.statusReasons} />
+      <DailySnapshot checkin={checkin} />
 
       {plan.redFlags?.length > 0 && (
         <div className="card alert">
@@ -272,9 +277,15 @@ function finishWorkout(session: Session) {
       didPlayPadel: checkin.playingToday !== 'none',
       padelHours: checkin.playingToday !== 'none' ? hoursVal : 0,
       fatigue: checkin.fatigue,
-      pain: checkin.injuries.length,
       sleep: checkin.sleepQuality,
+      sleepHours: checkin.sleepHours,
       energy: checkin.energy,
+      pain: checkin.injuries.length,
+      painMax: worstPain(checkin),
+      status: plan.status,
+      planType: plan.planType,
+      duration: plan.duration,
+      exercisesDone: session.done.length,
     };
   });
   if (!ok) showToast('Não foi possível guardar neste ambiente. Abre a app no Safari do iPhone.');

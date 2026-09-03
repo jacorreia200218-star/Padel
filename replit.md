@@ -87,7 +87,8 @@ Toda a app está em `artifacts/padel-coach/`:
 
 Cinco separadores:
 
-- **Hoje** — check-in diário (jogo previsto, sono, energia, cansaço, dores
+- **Hoje** — saudação, estado do dia e os números do check-in num relance;
+  depois o check-in diário (jogo previsto, sono, energia, cansaço, dores
   musculares, dor por zona com triagem, atividade de ontem, tempo e material) e,
   a partir dele, o **estado do dia** em semáforo 🟢🟡🔴, o plano resultante, o
   raciocínio da escolha e dicas de recuperação por zona. Daí arranca o **treino
@@ -100,9 +101,10 @@ Cinco separadores:
   para mobilidade, fortalecimento e prevenção nessa área, por ordem (primeiro
   soltar, depois fortalecer), com dicas de autocuidado. Os sinais de alerta
   estão sempre visíveis, escolhida ou não uma zona.
-- **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso,
-  dor), seguido das estatísticas: horas de padel, dias de treino, sequência e
-  gráficos a 30 dias.
+- **Histórico** — os últimos sete dias com o estado e o que se fez em cada um,
+  calendário mensal, e as estatísticas a 30 dias: horas de padel, tempo de
+  treino, sequência, médias de energia, sono e cansaço, dias com dor, e
+  gráficos de cada uma dessas séries.
 - **Perfil** — nome, idade, altura, peso, nível e frequência de padel, objetivos
   de treino, dias e tempo disponíveis, material e historial de lesões. O tempo e
   o material servem de ponto de partida no check-in diário. Aqui ficam também o

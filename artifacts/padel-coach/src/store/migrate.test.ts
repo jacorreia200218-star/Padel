@@ -115,6 +115,17 @@ describe('migrate', () => {
     assert.deepEqual(migrate(comoV1()).plans, {});
   });
 
+  it('preenche os campos novos do histórico sem inventar nada', () => {
+    const log = migrate(comoV1()).logs['2026-08-30'];
+    // Um dia antigo não tinha estado do dia nem tipo de plano registados.
+    // Ficam vazios de propósito, para o histórico não afirmar o que não sabe.
+    assert.equal(log.planType, '');
+    assert.equal(log.duration, 0);
+    assert.equal(log.exercisesDone, 0);
+    assert.equal(log.painMax, 0);
+    assert.equal(log.sleepHours, 0);
+  });
+
   it('correr duas vezes dá o mesmo que correr uma', () => {
     const uma = migrate(comoV1());
     const duas = migrate(structuredClone(uma));

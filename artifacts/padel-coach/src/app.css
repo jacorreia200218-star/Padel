@@ -296,6 +296,52 @@ main {
   border-radius: 3px;
 }
 
+/* ---------- dashboard ---------- */
+
+.greeting {
+  margin: 0 2px 14px;
+}
+.greeting-hello {
+  font-family: var(--app-font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.snapshot {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.snapshot-item {
+  background: var(--card);
+  border-radius: var(--radius-sm);
+  padding: 10px 6px;
+  text-align: center;
+}
+.snapshot-emoji {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.snapshot-value {
+  font-family: var(--app-font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.snapshot-value.alerta {
+  color: var(--coral);
+}
+.snapshot-label {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+  margin-top: 1px;
+  line-height: 1.3;
+}
+.snapshot-sub {
+  color: var(--text-faint);
+}
+
 /* ---------- semáforo do dia ---------- */
 
 .status-banner {
@@ -698,6 +744,47 @@ label.field-label {
   margin-right: 5px;
 }
 
+/* ---------- a semana ---------- */
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.week-day {
+  text-align: center;
+  padding: 8px 2px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.week-day.hoje {
+  outline: 1.5px solid var(--accent);
+}
+.week-dow {
+  font-size: 0.62rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.week-mark {
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.week-empty {
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+.week-what {
+  font-size: 0.72rem;
+  min-height: 1em;
+}
+.week-legend {
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  text-align: center;
+  margin-top: 10px;
+}
+
 /* ---------- estatísticas ---------- */
 
 .stat-grid {
@@ -719,6 +806,11 @@ label.field-label {
   font-size: 0.72rem;
   color: var(--text-dim);
   margin-top: 2px;
+}
+.chart-scale {
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 svg.chart {
   width: 100%;

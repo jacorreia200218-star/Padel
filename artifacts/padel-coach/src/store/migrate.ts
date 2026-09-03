@@ -9,7 +9,6 @@
  */
 
 import type { Checkin, Injury, SorenessLevel } from '../engine/checkin';
-import type { Log } from './useStore';
 
 /** Formato antigo do check-in, tal como ficou gravado em localStorage. */
 interface CheckinV1 {
@@ -101,8 +100,24 @@ export function migrateCheckin(old: CheckinV1): Checkin {
   };
 }
 
-/** Os registos do histórico guardavam energia, sono e cansaço de 1 a 10. */
-export function migrateLog(old: Log & { scale?: number }): Log {
+/** Formato antigo do registo diário, com as escalas de 1 a 10. */
+export interface LogV1 {
+  date: string;
+  didTrain: boolean;
+  didPlayPadel: boolean;
+  padelHours: number;
+  fatigue: number;
+  sleep: number;
+  energy: number;
+  pain: number;
+}
+
+/**
+ * Converte as escalas de 1-10 para 1-5. Os campos acrescentados depois (estado
+ * do dia, tipo de plano, duração) são preenchidos no passo seguinte da
+ * migração — aqui só se toca no que existia.
+ */
+export function migrateLog<T extends LogV1>(old: T): T {
   return {
     ...old,
     energy: toFive(old.energy),

@@ -13,7 +13,7 @@
 import { useEffect, useState } from 'react';
 
 import { DEFAULT_PROFILE, type Profile } from '../data/profile';
-import type { Checkin } from '../engine/checkin';
+import type { Checkin, Status } from '../engine/checkin';
 import type { Plan } from '../engine/planner';
 import type { ExerciseProgress } from '../engine/progression';
 import type { Session } from '../engine/session';
@@ -28,8 +28,20 @@ export interface Log {
   fatigue: number;
   sleep: number;
   energy: number;
+  /** Horas dormidas. */
+  sleepHours: number;
   /** Quantas zonas com dor a sério nesse dia. */
   pain: number;
+  /** A dor mais forte reportada, 0 a 10. */
+  painMax: number;
+  /** Estado do dia, para o histórico poder mostrar a evolução do semáforo. */
+  status: Status;
+  /** Tipo de plano ("Força e Potência", "Recuperação"...). */
+  planType: string;
+  /** Minutos previstos do plano. */
+  duration: number;
+  /** Exercícios efectivamente concluídos. */
+  exercisesDone: number;
 }
 
 /**
@@ -37,8 +49,9 @@ export interface Log {
  * 1 — original: escalas de 1 a 10, zonas de dor com dois estados
  * 2 — check-in completo: escalas de 1 a 5, lesões detalhadas, sono em horas
  * 3 — planos passam a ter o estado do dia (semáforo)
+ * 4 — o histórico passa a guardar estado, tipo de plano, duração e dor máxima
  */
-export const DATA_VERSION = 3;
+export const DATA_VERSION = 4;
 
 export interface AppData {
   version: number;
@@ -100,7 +113,30 @@ export function migrate(raw: AppData): AppData {
     data = { ...data, version: 3, plans: {} };
   }
 
+  if (data.version < 4) {
+    // Os registos antigos não guardavam estado nem tipo de plano. Preenchemos
+    // com valores neutros em vez de inventar: um dia antigo sem estado é
+    // mostrado como tal, não como se tivesse sido verde.
+    const logs: Record<string, Log> = {};
+    for (const [key, log] of Object.entries(data.logs ?? {})) {
+      logs[key] = { ...emptyLogFields(), ...log };
+    }
+    data = { ...data, version: 4, logs };
+  }
+
   return { ...data, version: DATA_VERSION };
+}
+
+/** Os campos acrescentados na versão 4, com valores que não fingem saber nada. */
+function emptyLogFields() {
+  return {
+    sleepHours: 0,
+    painMax: 0,
+    status: 'green' as Status,
+    planType: '',
+    duration: 0,
+    exercisesDone: 0,
+  };
 }
 
 function readFromStorage(): { data: AppData; migrated: boolean } {

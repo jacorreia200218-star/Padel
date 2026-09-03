@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { WeekStrip } from '../components/WeekStrip';
 import { dateKey, todayKey, useStore } from '../store/useStore';
 import { StatsTab } from './StatsTab';
 
@@ -35,6 +36,14 @@ export function HistoryTab() {
 
   return (
     <>
+      <div className="section-title" style={{ marginTop: 0 }}>
+        A tua semana
+      </div>
+      <div className="card">
+        <WeekStrip logs={data.logs} />
+      </div>
+
+      <div className="section-title">Calendário</div>
       <div className="card">
         <div className="row" style={{ marginBottom: 14 }}>
         <button
