@@ -5,7 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Padel Coach AI</title>
 <meta name="description" content="Assistente pessoal de preparação física para padel: check-in diário, plano de treino adaptado ao teu estado e biblioteca de exercícios.">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F2027">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<!-- O iOS ignora o manifest: precisa destas suas. Adicionada ao ecrã principal,
+     a app abre sem barra do browser e o sistema deixa de apagar os dados
+     guardados por falta de uso. -->
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Padel Coach">
 </head>
 <body>
 <div id="root"></div>

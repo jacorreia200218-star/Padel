@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { DEFAULT_PROFILE, type Profile } from '../data/profile';
 import type { Checkin } from '../engine/checkin';
 import type { Plan } from '../engine/planner';
 import type { Session } from '../engine/session';
@@ -40,6 +41,7 @@ export const DATA_VERSION = 3;
 
 export interface AppData {
   version: number;
+  profile: Profile;
   checkins: Record<string, Checkin>;
   plans: Record<string, Plan>;
   logs: Record<string, Log>;
@@ -53,6 +55,7 @@ const STORAGE_KEY = 'padel-coach-ai-data';
 
 export const DEFAULT_DATA: AppData = {
   version: DATA_VERSION,
+  profile: DEFAULT_PROFILE,
   checkins: {},
   plans: {},
   logs: {},
@@ -104,7 +107,14 @@ function readFromStorage(): { data: AppData; migrated: boolean } {
     // A versão tem de sair do que estava gravado, não dos valores por omissão:
     // dados da primeira versão não têm campo `version` e ficariam por migrar.
     const version = parsed.version ?? 1;
-    const stored: AppData = { ...structuredClone(DEFAULT_DATA), ...parsed, version };
+    const stored: AppData = {
+      ...structuredClone(DEFAULT_DATA),
+      ...parsed,
+      version,
+      // O spread é raso: um perfil gravado por uma versão anterior pode não ter
+      // todos os campos, e sem isto ficariam a undefined.
+      profile: { ...DEFAULT_PROFILE, ...(parsed.profile ?? {}) },
+    };
     return { data: migrate(stored), migrated: version !== DATA_VERSION };
   } catch {
     // Primeira utilização, ou localStorage indisponível neste contexto.

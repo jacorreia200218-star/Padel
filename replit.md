@@ -28,12 +28,15 @@ Toda a app está em `artifacts/padel-coach/`:
 | `src/data/library/` | **Fonte de verdade** dos 92 exercícios, por família (mobilidade, força, core, explosão/agilidade, prevenção, recuperação) |
 | `src/data/types.ts` | O que um exercício tem: execução, erros comuns, benefícios, cuidados, alternativas |
 | `src/data/zones.ts` | Programas por zona do corpo e os sinais de alerta da página de dores |
+| `src/data/profile.ts` | Perfil de quem usa a app e as opções dos seus campos |
+| `src/pwa.ts` | Registo do service worker e deteção de app instalada |
+| `public/sw.js` | Service worker: a app abre sem rede |
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
 | `src/engine/session.ts` | O treino a decorrer: onde vai, substituições, alternativas |
 | `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
 | `src/store/migrate.ts` | Conversão de dados gravados por versões anteriores do formato |
-| `src/tabs/` | Os cinco separadores (Hoje, Exercícios, Dores, Histórico, Definições) |
+| `src/tabs/` | Os cinco separadores (Hoje, Exercícios, Dores, Histórico, Perfil) |
 | `src/app.css` | Estilos da app. `src/index.css` tem só os tokens de cor e o Tailwind |
 
 ## Architecture decisions
@@ -86,14 +89,23 @@ Cinco separadores:
 - **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso,
   dor), seguido das estatísticas: horas de padel, dias de treino, sequência e
   gráficos a 30 dias.
-- **Definições** — objetivos de treino, exportar/importar backup, apagar dados.
+- **Perfil** — nome, idade, altura, peso, nível e frequência de padel, objetivos
+  de treino, dias e tempo disponíveis, material e historial de lesões. O tempo e
+  o material servem de ponto de partida no check-in diário. Aqui ficam também o
+  backup e a limpeza de dados.
+
+A app é instalável (PWA): adicionada ao ecrã principal abre sem barra do browser
+e sem rede.
 
 ## Gotchas
 
-- **Os dados vivem só no browser do utilizador.** Trocar de telemóvel, limpar os
-  dados do Safari, ou o iOS limpar `localStorage` de um site não visitado há
-  ~7 dias apaga tudo. As Definições têm exportação manual para backup. Adicionar
-  ao ecrã principal (PWA) evita a limpeza automática do iOS.
+- **Os dados vivem só no browser do utilizador.** Trocar de telemóvel ou limpar
+  os dados do Safari apaga tudo; o Perfil tem exportação manual para backup.
+  Fora do ecrã principal, o iOS ainda apaga `localStorage` de sites não visitados
+  há ~7 dias — daí o aviso para instalar que aparece no Perfil enquanto a app
+  correr dentro do browser.
+- **Ao mudar `public/sw.js`, subir `CACHE_VERSION`.** Sem isso, quem tem a versão
+  antiga em cache pode nunca chegar à nova.
 - **As chaves de data são locais, nunca UTC.** Usar `todayKey()`, `dateKey()` e
   `parseDateKey()` de `src/store/useStore.ts` — nunca `toISOString()` sobre uma
   data local, que no horário de verão recua um dia (era o bug da versão

@@ -5,13 +5,13 @@ import {
   IconHistory,
   IconLibrary,
   IconPain,
-  IconSettings,
+  IconProfile,
   IconToday,
 } from './components/icons';
 import { HistoryTab } from './tabs/HistoryTab';
 import { LibraryTab } from './tabs/LibraryTab';
 import { PainTab } from './tabs/PainTab';
-import { SettingsTab } from './tabs/SettingsTab';
+import { ProfileTab } from './tabs/ProfileTab';
 import { TodayTab } from './tabs/TodayTab';
 
 interface Tab {
@@ -29,7 +29,7 @@ const TABS: Tab[] = [
   { id: 'library', label: 'Exercícios', Icon: IconLibrary, View: LibraryTab },
   { id: 'pain', label: 'Dores', Icon: IconPain, View: PainTab },
   { id: 'history', label: 'Histórico', Icon: IconHistory, View: HistoryTab },
-  { id: 'settings', label: 'Definições', Icon: IconSettings, View: SettingsTab },
+  { id: 'profile', label: 'Perfil', Icon: IconProfile, View: ProfileTab },
 ];
 
 export default function App() {

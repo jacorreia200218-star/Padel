@@ -460,6 +460,51 @@ label.field-label {
   font-family: inherit;
 }
 
+.textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.measure-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.measure-input {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.measure-input input {
+  width: 100%;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--app-font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  /* As setinhas do input numérico não cabem num campo desta largura. */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.measure-input input::-webkit-outer-spin-button,
+.measure-input input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.measure-input span {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
 .empty {
   text-align: center;
   padding: 60px 20px;

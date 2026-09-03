@@ -54,6 +54,15 @@ export function IconStats(_: IconProps) {
   );
 }
 
+export function IconProfile(_: IconProps) {
+  return (
+    <Svg>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6" />
+    </Svg>
+  );
+}
+
 export function IconSettings(_: IconProps) {
   return (
     <Svg>

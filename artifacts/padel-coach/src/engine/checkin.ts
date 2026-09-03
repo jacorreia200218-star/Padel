@@ -59,14 +59,22 @@ export interface Checkin {
   yesterday: YesterdayActivity;
 }
 
-export function emptyCheckin(date: string): Checkin {
+/**
+ * Um check-in em branco. O tempo e o material vêm do perfil, se lá estiverem —
+ * são as duas respostas que raramente mudam de dia para dia e que, sem isto,
+ * teriam de ser repetidas todas as manhãs.
+ */
+export function emptyCheckin(
+  date: string,
+  defaults: { time?: number; equipment?: string[] } = {},
+): Checkin {
   return {
     version: 2,
     date,
     playingToday: 'none',
     hours: '1.5',
-    time: 30,
-    equipment: ['bodyweight'],
+    time: defaults.time ?? 30,
+    equipment: defaults.equipment?.length ? [...defaults.equipment] : ['bodyweight'],
     sleepHours: 7,
     sleepQuality: 3,
     energy: 3,

@@ -23,7 +23,7 @@ import {
   type Injury,
   type SorenessLevel,
 } from '../engine/checkin';
-import { todayKey } from '../store/useStore';
+import { todayKey, useStore } from '../store/useStore';
 import { Modal } from './Modal';
 import { ChipChoice, Field, MultiChip, SegChoice, Slider } from './fields';
 
@@ -43,7 +43,12 @@ interface CheckinModalProps {
 }
 
 export function CheckinModal({ existing, onSubmit, onClose }: CheckinModalProps) {
-  const [form, setForm] = useState<Checkin>(() => existing ?? emptyCheckin(todayKey()));
+  const { profile } = useStore();
+  const [form, setForm] = useState<Checkin>(
+    () =>
+      existing ??
+      emptyCheckin(todayKey(), { time: profile.usualTime, equipment: profile.equipment }),
+  );
 
   const set = <K extends keyof Checkin>(key: K, value: Checkin[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
