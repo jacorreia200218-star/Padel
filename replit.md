@@ -62,10 +62,10 @@ Cinco separadores:
   dados do Safari, ou o iOS limpar `localStorage` de um site não visitado há
   ~7 dias apaga tudo. As Definições têm exportação manual para backup. Adicionar
   ao ecrã principal (PWA) evita a limpeza automática do iOS.
-- **`todayKey()` tem um desvio de fuso horário conhecido** (ver comentário em
-  `src/store/useStore.ts`): no horário de verão devolve o dia anterior. Todas as
-  chaves sofrem o mesmo desvio, por isso a app é coerente, mas as datas
-  guardadas estão erradas. Corrigir implica migrar os dados já guardados.
+- **As chaves de data são locais, nunca UTC.** Usar `todayKey()`, `dateKey()` e
+  `parseDateKey()` de `src/store/useStore.ts` — nunca `toISOString()` sobre uma
+  data local, que no horário de verão recua um dia (era o bug da versão
+  anterior), nem `new Date("2026-09-03")`, que é lido como meia-noite UTC.
 - **Ao mudar `exercises.ts`, não reutilizar ids antigos com significado novo** —
   `exerciseLastUsed` guarda ids e os planos antigos referenciam-nos.
 - **Alterar o formato de `AppData` exige migração**, senão quem já usa a app

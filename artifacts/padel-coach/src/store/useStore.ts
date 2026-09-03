@@ -97,27 +97,35 @@ export function useStore(): AppData {
   return state;
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
- * BUG CONHECIDO (herdado da versão anterior, mantido de propósito nesta fase):
- * pôr a hora local a 00:00 e depois converter para ISO devolve a data em UTC.
- * Em Portugal no horário de verão (UTC+1) isso dá o dia anterior — a 03/09
- * a chave gerada é "2026-09-02".
+ * Data local no formato AAAA-MM-DD.
  *
- * Como todas as chaves (check-ins, planos, logs e o calendário) sofrem o mesmo
- * desvio, a app é internamente coerente e o utilizador não nota. Mas as datas
- * guardadas estão erradas, e o desvio muda quando acaba o horário de verão.
- *
- * Corrigir implica migrar os dados já guardados, por isso fica para uma fase
- * própria — não para a migração para React, que não deve alterar comportamento.
+ * Usamos os componentes locais em vez de toISOString(), que converte para UTC:
+ * a versão anterior fazia isso e, no horário de verão em Portugal (UTC+1),
+ * gravava sempre o dia anterior — a 03/09 a chave saía "2026-09-02".
  */
+function localDateKey(d: Date): string {
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 export function todayKey(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  return localDateKey(new Date());
 }
 
 export function dateKey(d: Date | string | number): string {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x.toISOString().slice(0, 10);
+  // Uma chave que já vem no formato certo passa tal e qual. Se a convertêssemos
+  // para Date, o JavaScript lê-a como meia-noite UTC e em fusos negativos ela
+  // voltaria a recuar um dia.
+  if (typeof d === 'string' && ISO_DATE.test(d)) return d;
+  return localDateKey(new Date(d));
+}
+
+/** Converte uma chave AAAA-MM-DD numa data local, sem passar por UTC. */
+export function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }

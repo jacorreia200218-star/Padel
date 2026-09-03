@@ -1,5 +1,5 @@
 import { BarChart, LineChart } from '../components/Charts';
-import { dateKey, useStore, type Log } from '../store/useStore';
+import { dateKey, parseDateKey, useStore, type Log } from '../store/useStore';
 
 export function StatsTab() {
   const data = useStore();
@@ -68,7 +68,7 @@ function computeStreak(logs: Log[]): number {
 function weeklyBuckets(logs: Log[], field: 'padelHours'): number[] {
   const buckets: Record<string, number> = {};
   logs.forEach((l) => {
-    const d = new Date(l.date);
+    const d = parseDateKey(l.date);
     const onejan = new Date(d.getFullYear(), 0, 1);
     const week = Math.ceil(((d.getTime() - onejan.getTime()) / 86400000 + onejan.getDay() + 1) / 7);
     const key = `${d.getFullYear()}-W${week}`;
