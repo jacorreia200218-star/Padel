@@ -1,155 +1,236 @@
-import React, { useState, useEffect } from 'react';
-import { useStore, todayKey } from '../store/useStore';
-import { generatePlan, readinessScore } from '../engine/planner';
-import { CATEGORY_LABEL, exerciseById, Exercise } from '../data/exercises';
-import { ReadinessRing } from '../components/ReadinessRing';
+import { useEffect, useState } from 'react';
+
 import { CheckinModal } from '../components/CheckinModal';
+import { ExerciseCard } from '../components/ExerciseCard';
 import { ExerciseModal } from '../components/ExerciseModal';
+import { ReadinessRing } from '../components/ReadinessRing';
+import { showToast } from '../components/Toast';
+import {
+  CATEGORY_LABEL,
+  MUSCULAR_TIPS,
+  PAIN_TIPS,
+  PAIN_ZONES,
+  exerciseById,
+  type Exercise,
+} from '../data/exercises';
+import { generatePlan, readinessScore, type Checkin, type Plan } from '../engine/planner';
+import { todayKey, updateData, useStore } from '../store/useStore';
 
 export function TodayTab() {
-  const { data, updateData } = useStore();
-  const [isCheckinOpen, setCheckinOpen] = useState(false);
-  const [redoCheckin, setRedoCheckin] = useState(false);
-  const [selectedEx, setSelectedEx] = useState<Exercise | null>(null);
-
+  const data = useStore();
   const key = todayKey();
   const checkin = data.checkins[key];
+  const plan = data.plans[key];
 
-  // Auto-generate plan if checkin exists but plan doesn't
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [redo, setRedo] = useState(false);
+  const [openExercise, setOpenExercise] = useState<Exercise | null>(null);
+
+  // Se houver check-in mas ainda não um plano (por exemplo, dados importados de
+  // outro dispositivo), geramos o plano na primeira renderização do dia.
   useEffect(() => {
-    if (checkin && !data.plans[key]) {
-      const plan = generatePlan(checkin, data.goals);
-      const newData = { ...data };
-      newData.plans[key] = plan;
-      updateData(newData);
-    }
-  }, [checkin, data.plans[key]]);
+    if (checkin && !plan) storePlan(checkin);
+  }, [checkin, plan]);
 
   if (!checkin) {
     return (
       <>
-        <div className="bg-[#1E434C] border border-white/5 rounded-[18px] p-4 mb-3 text-center py-[60px] px-5 text-[#9CB8B4]">
-          <span className="text-[2.4rem] block mb-3.5 text-[#D8FF3E]">●</span>
-          <h3 className="m-0 mb-2 text-[#EFF6F1]">Ainda sem check-in hoje</h3>
-          <p className="m-0 mb-5 text-[0.88rem]">Responde a umas perguntas rápidas para gerar o teu plano do dia.</p>
-          <button 
-            onClick={() => { setRedoCheckin(false); setCheckinOpen(true); }}
-            className="w-full bg-[#D8FF3E] text-[#12210A] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center"
+        <div className="empty card hi">
+          <span className="big-emoji">🎾</span>
+          <h3 style={{ margin: '0 0 8px' }}>Ainda sem check-in hoje</h3>
+          <p style={{ margin: '0 0 20px', fontSize: '0.88rem' }}>
+            Responde a umas perguntas rápidas para gerar o teu plano do dia.
+          </p>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setRedo(false);
+              setCheckinOpen(true);
+            }}
           >
             Começar Check-in
           </button>
         </div>
-        <CheckinModal isOpen={isCheckinOpen} onClose={() => setCheckinOpen(false)} />
+        {checkinOpen && (
+          <CheckinModal
+            existing={null}
+            onSubmit={(c) => {
+              saveCheckin(c);
+              setCheckinOpen(false);
+            }}
+            onClose={() => setCheckinOpen(false)}
+          />
+        )}
       </>
     );
   }
 
-  const plan = data.plans[key];
-  if (!plan) {
-    return <div className="text-center py-[60px] text-[#9CB8B4]">A gerar plano...</div>;
-  }
+  if (!plan) return <div className="empty">A gerar o plano…</div>;
 
   const rs = readinessScore(checkin);
-  const pct = Math.max(0, Math.min(1, rs / 10));
-  const exList = plan.exerciseIds.map(id => exerciseById(id)).filter((e): e is Exercise => Boolean(e));
-
-  const completeToday = () => {
-    const newData = { ...data };
-    newData.plans[key].completed = true;
-    newData.logs[key] = {
-      date: key,
-      didTrain: true,
-      didPlayPadel: checkin.playingToday !== "none",
-      padelHours: checkin.playingToday !== "none" ? 1.5 : 0,
-      fatigue: checkin.fatigue,
-      pain: checkin.pain.length,
-      sleep: checkin.sleep,
-      energy: checkin.energy
-    };
-    updateData(newData);
-  };
+  const exList = plan.exerciseIds.map(exerciseById).filter((e): e is Exercise => Boolean(e));
 
   return (
     <>
-      <div className="bg-[#1E434C] border border-white/5 rounded-[18px] p-4 mb-3">
-        <div className="flex items-center gap-4">
-          <ReadinessRing pct={pct} />
+      <div className="card hi">
+        <div className="ring-wrap">
+          <ReadinessRing pct={rs / 10} />
           <div>
-            <div className="font-display text-[2rem] font-bold text-[#EFF6F1] leading-tight">{plan.planType}</div>
-            <div className="text-[#9CB8B4] text-[0.8rem]">~{plan.duration} min · prontidão {rs}/10</div>
+            <div className="ring-label-big">{plan.planType}</div>
+            <div className="ring-sub">
+              ~{plan.duration} min · prontidão {rs}/10
+            </div>
           </div>
         </div>
-        
-        <div className="flex flex-wrap gap-1.5 mt-3.5">
-          {plan.focus.map(c => (
-            <span key={c} className="inline-block text-[0.66rem] font-bold px-2 py-1 rounded-md bg-white/10 text-[#9CB8B4]">
+        <div className="chip-row" style={{ marginTop: 14 }}>
+          {plan.focus.map((c) => (
+            <span key={c} className="tag">
               {CATEGORY_LABEL[c]}
             </span>
           ))}
         </div>
-        
         {plan.reasoning.length > 0 && (
           <>
             <div className="divider-lines" />
             {plan.reasoning.map((r, i) => (
-              <div key={i} className="text-[0.78rem] text-[#9CB8B4] mb-1.5">✦ {r}</div>
+              <div
+                key={i}
+                style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: 6 }}
+              >
+                ✦ {r}
+              </div>
             ))}
           </>
         )}
       </div>
 
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mt-5 mb-2.5 mx-0.5">
-        Exercícios de hoje
-      </div>
-      
-      {exList.map(e => (
-        <div 
-          key={e.id}
-          onClick={() => setSelectedEx(e)}
-          className="flex gap-3 items-center bg-[#173840] rounded-[12px] p-3 mb-2 cursor-pointer border border-white/5"
-        >
-          <div className="w-[42px] h-[42px] rounded-[12px] bg-[#D8FF3E]/10 flex items-center justify-center font-display font-bold text-[#D8FF3E] text-[0.95rem] shrink-0">
-            {e.sets}×
-          </div>
-          <div className="flex-1">
-            <div className="font-bold text-[0.9rem] text-[#EFF6F1]">{e.name}</div>
-            <div className="text-[0.74rem] text-[#9CB8B4] mt-0.5">{e.reps} · descanso {e.rest}s</div>
-          </div>
-          <div className="text-[0.72rem] text-[#6C8985] font-display">{e.duration}m</div>
-        </div>
+      <div className="section-title">Exercícios de hoje</div>
+      {exList.map((e) => (
+        <ExerciseCard key={e.id} exercise={e} onClick={() => setOpenExercise(e)} />
       ))}
 
+      <RecoveryTips plan={plan} />
+
       {plan.completed ? (
-        <div className="bg-[#173840] border border-white/5 rounded-[18px] p-4 text-center text-[#D8FF3E] font-bold mt-2">
+        <div className="card" style={{ textAlign: 'center', color: 'var(--accent)', fontWeight: 700 }}>
           ✓ Dia concluído
         </div>
       ) : (
-        <button 
-          onClick={completeToday}
-          className="w-full bg-[#D8FF3E] text-[#12210A] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center mt-2"
-        >
+        <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={completeToday}>
           Marcar dia como concluído
         </button>
       )}
-      
-      <button 
-        onClick={() => { setRedoCheckin(true); setCheckinOpen(true); }}
-        className="w-full bg-white/5 text-[#EFF6F1] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center mt-2.5 mb-8"
+
+      <button
+        className="btn btn-ghost"
+        style={{ marginTop: 10 }}
+        onClick={() => {
+          setRedo(true);
+          setCheckinOpen(true);
+        }}
       >
         Refazer check-in de hoje
       </button>
 
-      <CheckinModal 
-        isOpen={isCheckinOpen} 
-        onClose={() => setCheckinOpen(false)} 
-        existingCheckin={redoCheckin ? checkin : undefined} 
-      />
-      
-      <ExerciseModal 
-        isOpen={!!selectedEx} 
-        onClose={() => setSelectedEx(null)} 
-        exercise={selectedEx} 
-      />
+      {checkinOpen && (
+        <CheckinModal
+          existing={redo ? checkin : null}
+          onSubmit={(c) => {
+            saveCheckin(c);
+            setCheckinOpen(false);
+          }}
+          onClose={() => setCheckinOpen(false)}
+        />
+      )}
+      {openExercise && (
+        <ExerciseModal exercise={openExercise} onClose={() => setOpenExercise(null)} />
+      )}
+    </>
+  );
+}
+
+/** Gera e guarda o plano do dia, registando que exercícios saíram e quando. */
+function storePlan(checkin: Checkin) {
+  updateData((d) => {
+    const p = generatePlan(checkin, d.goals, d.exerciseLastUsed);
+    d.plans[checkin.date] = p;
+    p.exerciseIds.forEach((id) => {
+      d.exerciseLastUsed[id] = checkin.date;
+    });
+  });
+}
+
+function saveCheckin(checkin: Checkin) {
+  const ok = updateData((d) => {
+    d.checkins[checkin.date] = checkin;
+    const p = generatePlan(checkin, d.goals, d.exerciseLastUsed);
+    d.plans[checkin.date] = p;
+    p.exerciseIds.forEach((id) => {
+      d.exerciseLastUsed[id] = checkin.date;
+    });
+  });
+  if (!ok) showToast('Não foi possível guardar neste ambiente. Abre a app no Safari do iPhone.');
+}
+
+function completeToday() {
+  const key = todayKey();
+  const ok = updateData((d) => {
+    const checkin = d.checkins[key];
+    const plan = d.plans[key];
+    if (!checkin || !plan) return;
+    plan.completed = true;
+    const realPainCount = Object.values(checkin.painZones ?? {}).filter((t) => t === 'dor').length;
+    const hoursVal = checkin.hours === '3+' ? 3 : parseFloat(checkin.hours || '1.5');
+    d.logs[key] = {
+      date: key,
+      didTrain: true,
+      didPlayPadel: checkin.playingToday !== 'none',
+      padelHours: checkin.playingToday !== 'none' ? hoursVal : 0,
+      fatigue: checkin.fatigue,
+      pain: realPainCount,
+      sleep: checkin.sleep,
+      energy: checkin.energy,
+    };
+  });
+  if (!ok) showToast('Não foi possível guardar neste ambiente. Abre a app no Safari do iPhone.');
+}
+
+function RecoveryTips({ plan }: { plan: Plan }) {
+  const realZones = plan.realPainZones ?? [];
+  const muscZones = plan.muscularZones ?? [];
+  if (!realZones.length && !muscZones.length) return null;
+
+  return (
+    <>
+      <div className="section-title">Dicas de recuperação</div>
+      <div className="card">
+        {realZones.map((id) => (
+          <div key={id} style={{ marginBottom: 10 }}>
+            <b style={{ color: 'var(--coral)', fontSize: '0.82rem' }}>
+              {PAIN_ZONES.find((z) => z.id === id)?.label} · dor
+            </b>
+            {(PAIN_TIPS[id] ?? []).map((t, i) => (
+              <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: 4 }}>
+                ❄ {t}
+              </div>
+            ))}
+          </div>
+        ))}
+        {muscZones.length > 0 && (
+          <div>
+            <b style={{ color: 'var(--amber)', fontSize: '0.82rem' }}>Cansaço muscular</b>
+            {MUSCULAR_TIPS.map((t, i) => (
+              <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: 4 }}>
+                ✦ {t}
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-faint)', marginTop: 12 }}>
+          Estas são dicas gerais de autocuidado, não substituem avaliação por um profissional de
+          saúde.
+        </div>
+      </div>
     </>
   );
 }

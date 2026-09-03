@@ -1,65 +1,84 @@
-import React from 'react';
-import { BottomSheet } from './BottomSheet';
-import { CATEGORY_LABEL, EQUIPMENT, Exercise } from '../data/exercises';
+import { CATEGORY_LABEL, EQUIPMENT, type Exercise } from '../data/exercises';
+import { Modal } from './Modal';
 
-interface Props {
-  isOpen: boolean;
+interface ExerciseModalProps {
+  exercise: Exercise;
   onClose: () => void;
-  exercise: Exercise | null;
 }
 
-export function ExerciseModal({ isOpen, onClose, exercise }: Props) {
-  if (!exercise) return null;
+export function ExerciseModal({ exercise: e, onClose }: ExerciseModalProps) {
+  // Uma pesquisa no YouTube em vez de um link fixo: nomes de exercícios mudam
+  // de canal para canal e um URL fixo acaba por apontar para vídeo removido.
+  const youtubeSearch = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    e.name + ' exercício padel',
+  )}`;
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose}>
-      <div className="flex flex-wrap gap-2 mb-2.5">
-        {exercise.cats.map(c => (
-          <span key={c} className="inline-block text-[0.66rem] font-bold px-2 py-1 rounded-md bg-white/10 text-[#9CB8B4]">
+    <Modal onClose={onClose}>
+      <div className="chip-row" style={{ marginBottom: 10 }}>
+        {e.cats.map((c) => (
+          <span key={c} className="tag">
             {CATEGORY_LABEL[c]}
           </span>
         ))}
       </div>
-      
-      <h2 className="m-0 mb-1">{exercise.name}</h2>
-      
-      <div className="text-[#6C8985] text-[0.78rem] mb-[18px] capitalize">
-        {exercise.diff}
+      <h2 style={{ margin: '0 0 4px' }}>{e.name}</h2>
+      <div
+        style={{
+          color: 'var(--text-faint)',
+          fontSize: '0.78rem',
+          marginBottom: 18,
+          textTransform: 'capitalize',
+        }}
+      >
+        {e.diff}
       </div>
-      
-      <div className="grid grid-cols-2 gap-2.5 mb-[18px]">
-        <div className="bg-[#173840] rounded-[12px] p-3.5">
-          <div className="font-display text-[1.4rem] font-bold">{exercise.sets}</div>
-          <div className="text-[0.72rem] text-[#9CB8B4] mt-0.5">Séries</div>
+
+      <div className="stat-grid" style={{ marginBottom: 18 }}>
+        <div className="stat-tile">
+          <div className="val">{e.sets}</div>
+          <div className="lab">Séries</div>
         </div>
-        <div className="bg-[#173840] rounded-[12px] p-3.5">
-          <div className="font-display text-[1.4rem] font-bold">{exercise.reps}</div>
-          <div className="text-[0.72rem] text-[#9CB8B4] mt-0.5">Repetições</div>
+        <div className="stat-tile">
+          <div className="val">{e.reps}</div>
+          <div className="lab">Repetições</div>
         </div>
-        <div className="bg-[#173840] rounded-[12px] p-3.5">
-          <div className="font-display text-[1.4rem] font-bold">{exercise.rest}s</div>
-          <div className="text-[0.72rem] text-[#9CB8B4] mt-0.5">Descanso</div>
+        <div className="stat-tile">
+          <div className="val">{e.rest}s</div>
+          <div className="lab">Descanso</div>
         </div>
-        <div className="bg-[#173840] rounded-[12px] p-3.5">
-          <div className="font-display text-[1.4rem] font-bold">{exercise.duration}m</div>
-          <div className="text-[0.72rem] text-[#9CB8B4] mt-0.5">Duração</div>
+        <div className="stat-tile">
+          <div className="val">{e.duration}m</div>
+          <div className="lab">Duração</div>
         </div>
       </div>
-      
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mb-2.5">Descrição</div>
-      <p className="text-[0.88rem] text-[#9CB8B4] m-0 mb-3.5">{exercise.desc}</p>
-      
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mb-2.5">Objetivo</div>
-      <p className="text-[0.88rem] text-[#9CB8B4] m-0 mb-3.5">{exercise.goal}</p>
-      
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mb-2.5">Equipamento</div>
-      <div className="flex flex-wrap gap-2">
-        {exercise.equip.map(eq => (
-          <span key={eq} className="inline-block text-[0.66rem] font-bold px-2 py-1 rounded-md bg-white/10 text-[#9CB8B4]">
-            {EQUIPMENT.find(x => x.id === eq)?.label || eq}
+
+      <div className="section-title" style={{ marginTop: 0 }}>
+        Descrição
+      </div>
+      <p style={{ fontSize: '0.88rem', color: 'var(--text-dim)', margin: '0 0 14px' }}>{e.desc}</p>
+
+      <div className="section-title">Objetivo</div>
+      <p style={{ fontSize: '0.88rem', color: 'var(--text-dim)', margin: '0 0 14px' }}>{e.goal}</p>
+
+      <div className="section-title">Equipamento</div>
+      <div className="chip-row" style={{ marginBottom: 20 }}>
+        {e.equip.map((eq) => (
+          <span key={eq} className="tag">
+            {EQUIPMENT.find((x) => x.id === eq)?.label ?? eq}
           </span>
         ))}
       </div>
-    </BottomSheet>
+
+      <a
+        className="btn btn-ghost"
+        style={{ textDecoration: 'none' }}
+        target="_blank"
+        rel="noopener"
+        href={youtubeSearch}
+      >
+        ▶ Ver exemplos em vídeo
+      </a>
+    </Modal>
   );
 }

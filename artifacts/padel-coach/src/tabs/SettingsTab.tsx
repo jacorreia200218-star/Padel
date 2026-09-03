@@ -1,22 +1,17 @@
-import React, { useRef } from 'react';
-import { useStore, todayKey } from '../store/useStore';
+import { useRef } from 'react';
+
+import { showToast } from '../components/Toast';
 import { GOALS } from '../data/exercises';
-import { useToast } from '@/hooks/use-toast';
+import { DEFAULT_DATA, saveData, todayKey, updateData, useStore } from '../store/useStore';
 
 export function SettingsTab() {
-  const { data, updateData } = useStore();
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const data = useStore();
+  const fileInput = useRef<HTMLInputElement>(null);
 
-  const toggleGoal = (id: string) => {
-    const newData = { ...data };
-    if (newData.goals.includes(id)) {
-      newData.goals = newData.goals.filter(g => g !== id);
-    } else {
-      newData.goals.push(id);
-    }
-    updateData(newData);
-  };
+  const toggleGoal = (id: string) =>
+    updateData((d) => {
+      d.goals = d.goals.includes(id) ? d.goals.filter((g) => g !== id) : [...d.goals, id];
+    });
 
   const exportData = () => {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -30,103 +25,88 @@ export function SettingsTab() {
     URL.revokeObjectURL(url);
   };
 
-  const resetData = () => {
-    if (!window.confirm('Apagar todos os check-ins, planos e histórico?')) return;
-    updateData({ checkins: {}, plans: {}, logs: {}, goals: ["injuryPrevention"] });
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const importData = (file: File) => {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(reader.result as string);
-        if (!parsed.checkins || !parsed.plans || !parsed.logs) {
-          throw new Error('formato inválido');
-        }
-        updateData(parsed);
-        toast({
-          description: "Dados importados com sucesso.",
-          className: "bg-[#1E434C] text-[#EFF6F1] border border-[rgba(216,255,62,0.14)]"
-        });
-      } catch (err) {
-        toast({
-          description: "Este ficheiro não é um backup válido do Padel Coach AI.",
-          variant: "destructive"
-        });
+        const parsed = JSON.parse(String(reader.result));
+        if (!parsed.checkins || !parsed.plans || !parsed.logs) throw new Error('formato inválido');
+        saveData({ ...structuredClone(DEFAULT_DATA), ...parsed });
+        showToast('Dados importados com sucesso.');
+      } catch {
+        showToast('Este ficheiro não é um backup válido do Padel Coach AI.');
       }
     };
     reader.readAsText(file);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  };
+
+  const resetData = () => {
+    if (!confirm('Apagar todos os check-ins, planos e histórico?')) return;
+    saveData(structuredClone(DEFAULT_DATA));
   };
 
   return (
     <>
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold m-0 mb-2.5">
+      <div className="section-title" style={{ marginTop: 0 }}>
         Objetivos de treino
       </div>
-      <p className="text-[0.82rem] text-[#9CB8B4] m-0 mb-3.5">
-        O plano diário prioriza exercícios alinhados com estes objetivos, sempre que a condição física do dia permitir.
+      <p style={{ fontSize: '0.82rem', color: 'var(--text-dim)', margin: '0 0 14px' }}>
+        O plano diário prioriza exercícios alinhados com estes objetivos, sempre que a condição
+        física do dia permitir.
       </p>
-      
-      <div className="flex flex-wrap gap-2 mb-6">
-        {GOALS.map(g => (
-          <button 
+      <div className="chip-row" style={{ marginBottom: 24 }}>
+        {GOALS.map((g) => (
+          <span
             key={g.id}
+            className={`chip ${data.goals.includes(g.id) ? 'selected' : ''}`}
             onClick={() => toggleGoal(g.id)}
-            className={`inline-flex items-center px-3.5 py-2 rounded-full text-[0.82rem] font-semibold border ${data.goals.includes(g.id) ? 'bg-[#D8FF3E] text-[#12210A] border-[#D8FF3E]' : 'bg-white/5 text-[#9CB8B4] border-transparent'}`}
           >
             {g.label}
-          </button>
+          </span>
         ))}
       </div>
 
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mb-2.5">
-        Dados
+      <div className="section-title">Dados</div>
+      <div className="card row">
+        <span style={{ fontSize: '0.85rem' }}>Check-ins guardados</span>
+        <span style={{ fontFamily: "'Space Grotesk'", fontWeight: 700 }}>
+          {Object.keys(data.checkins).length}
+        </span>
       </div>
-      <div className="bg-[#173840] border border-white/5 rounded-[18px] p-4 mb-3 flex items-center justify-between">
-        <span className="text-[0.85rem]">Check-ins guardados</span>
-        <span className="font-display font-bold">{Object.keys(data.checkins).length}</span>
-      </div>
-      
-      <button 
-        onClick={resetData}
-        className="w-full bg-[#FF7A66]/10 text-[#FF7A66] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center mt-3"
-      >
+      <button className="btn btn-danger" style={{ marginTop: 12 }} onClick={resetData}>
         Apagar todos os dados
       </button>
-      
-      <button 
-        onClick={exportData}
-        className="w-full bg-white/5 text-[#EFF6F1] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center mt-2.5"
-      >
+      <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={exportData}>
         Exportar dados (backup)
       </button>
-      
-      <label className="w-full bg-white/5 text-[#EFF6F1] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center mt-2.5 cursor-pointer">
+      <button
+        className="btn btn-ghost"
+        style={{ marginTop: 10 }}
+        onClick={() => fileInput.current?.click()}
+      >
         Importar dados
-        <input 
-          type="file" 
-          accept="application/json" 
-          ref={fileInputRef}
-          onChange={handleImport}
-          className="hidden" 
-        />
-      </label>
+      </button>
+      <input
+        ref={fileInput}
+        type="file"
+        accept="application/json"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) importData(file);
+          e.target.value = '';
+        }}
+      />
 
-      <div className="text-[0.72rem] uppercase tracking-[0.09em] text-[#6C8985] font-bold mt-6 mb-2.5">
-        Sobre
-      </div>
-      <div className="bg-[#173840] border border-white/5 rounded-[18px] p-4">
-        <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="section-title">Sobre</div>
+      <div className="card">
+        <div className="row" style={{ marginBottom: 8 }}>
           <b>Padel Coach AI</b>
-          <span className="text-[#9CB8B4] text-[0.8rem]">Web · 1.0</span>
+          <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Web · 1.0</span>
         </div>
-        <p className="text-[0.8rem] text-[#9CB8B4] m-0">
-          App de treino pessoal para padel. Todas as recomendações são geradas por regras locais — sem IA online, sem contas. Os dados ficam guardados neste dispositivo.
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: 0 }}>
+          App de treino pessoal para padel. Todas as recomendações são geradas por regras locais —
+          sem IA online, sem contas. Os dados ficam guardados neste dispositivo, neste Safari.
         </p>
       </div>
     </>

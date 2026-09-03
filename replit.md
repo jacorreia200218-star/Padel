@@ -1,44 +1,75 @@
-# [Project name]
+# Padel Coach AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Assistente pessoal de preparação física para padel: um check-in diário sobre o
+estado do corpo gera automaticamente o plano de treino do dia, com os exercícios
+escolhidos e a explicação de porque foram escolhidos.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/padel-coach run dev` — correr a app (porta 25005)
+- `pnpm --filter @workspace/padel-coach run build` — build de produção
+- `pnpm --filter @workspace/padel-coach run typecheck` — typecheck da app
+- `pnpm run typecheck` — typecheck de todos os pacotes
+- Env necessárias em dev: `PORT` e `BASE_PATH` (definidas pelo `artifact.toml`)
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- App: React 19 + Vite 7, CSS próprio (sem framework de componentes)
+- Persistência: `localStorage` do browser — **não há servidor nem base de dados**
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+Toda a app está em `artifacts/padel-coach/`:
+
+| Ficheiro | O que é |
+|---|---|
+| `src/data/exercises.ts` | **Fonte de verdade** dos 62 exercícios, categorias, zonas de dor, equipamento, objetivos e dicas |
+| `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
+| `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
+| `src/tabs/` | Os cinco separadores (Hoje, Biblioteca, Histórico, Estatísticas, Definições) |
+| `src/app.css` | Estilos da app. `src/index.css` tem só os tokens de cor e o Tailwind |
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Não há backend.** `artifacts/api-server` só tem um `/healthz` e `lib/db` não
+  define tabelas nenhumas — são andaimes do template do Replit, não são usados.
+  A base de dados Postgres do projeto está vazia de propósito.
+- **Não há IA.** Apesar do nome, o plano sai de regras determinísticas em
+  `planner.ts`. Não há chamadas a modelos nem a serviços externos — a app
+  funciona offline e nada sai do dispositivo.
+- **Vídeos são links de pesquisa no YouTube**, não URLs fixos. URLs fixos
+  apontam para vídeos removidos passado uns meses; a pesquisa nunca quebra.
+- **CSS próprio, sem biblioteca de componentes.** A app tem uma linguagem visual
+  definida (fundo escuro azulado, acento lima) que não vale a pena reconstruir
+  em cima de componentes genéricos.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Cinco separadores:
 
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- **Hoje** — check-in diário (jogo previsto, treino de ontem, energia, dor
+  muscular, cansaço, sono, zonas com dor, tempo e material disponível) e o plano
+  resultante, com o raciocínio e dicas de recuperação por zona.
+- **Biblioteca** — os 62 exercícios, com pesquisa e filtro por categoria.
+- **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso, dor).
+- **Estatísticas** — horas de padel, dias de treino, sequência e gráficos a 30 dias.
+- **Definições** — objetivos de treino, exportar/importar backup, apagar dados.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- **Os dados vivem só no browser do utilizador.** Trocar de telemóvel, limpar os
+  dados do Safari, ou o iOS limpar `localStorage` de um site não visitado há
+  ~7 dias apaga tudo. As Definições têm exportação manual para backup. Adicionar
+  ao ecrã principal (PWA) evita a limpeza automática do iOS.
+- **`todayKey()` tem um desvio de fuso horário conhecido** (ver comentário em
+  `src/store/useStore.ts`): no horário de verão devolve o dia anterior. Todas as
+  chaves sofrem o mesmo desvio, por isso a app é coerente, mas as datas
+  guardadas estão erradas. Corrigir implica migrar os dados já guardados.
+- **Ao mudar `exercises.ts`, não reutilizar ids antigos com significado novo** —
+  `exerciseLastUsed` guarda ids e os planos antigos referenciam-nos.
+- **Alterar o formato de `AppData` exige migração**, senão quem já usa a app
+  perde o histórico. A chave de `localStorage` é `padel-coach-ai-data`.
 
 ## Pointers
 

@@ -1,171 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import { BottomSheet } from './BottomSheet';
-import { PLAYING_TODAY, YESTERDAY, PAIN_ZONES, TIME_OPTIONS, EQUIPMENT } from '../data/exercises';
-import { useStore, todayKey } from '../store/useStore';
-import { generatePlan } from '../engine/planner';
+import { useState } from 'react';
 
-interface Props {
-  isOpen: boolean;
-  onClose: () => void;
-  existingCheckin?: any;
-}
+import {
+  EQUIPMENT,
+  PAIN_ZONES,
+  PLAYING_TODAY,
+  TIME_OPTIONS,
+  YESTERDAY,
+  YESTERDAY_TRAINING,
+} from '../data/exercises';
+import type { Checkin, PainState } from '../engine/planner';
+import { todayKey } from '../store/useStore';
+import { Modal } from './Modal';
 
-export function CheckinModal({ isOpen, onClose, existingCheckin }: Props) {
-  const { data, updateData } = useStore();
-  
-  const [form, setForm] = useState({
-    playingToday: "none",
-    playedYesterday: "none",
+const HOUR_OPTIONS = ['1', '1.5', '2', '2.5', '3+'];
+
+function emptyForm(date: string): Checkin {
+  return {
+    date,
+    playingToday: 'none',
+    hours: '1.5',
+    playedYesterday: 'none',
+    yesterdayTraining: 'none',
     energy: 5,
     soreness: 2,
     fatigue: 4,
     sleep: 6,
-    pain: [] as string[],
+    painZones: {},
     time: 30,
-    equipment: ["bodyweight"],
-  });
+    equipment: ['bodyweight'],
+  };
+}
 
-  useEffect(() => {
-    if (isOpen) {
-      if (existingCheckin) {
-        setForm(existingCheckin);
-      } else {
-        setForm({
-          playingToday: "none",
-          playedYesterday: "none",
-          energy: 5,
-          soreness: 2,
-          fatigue: 4,
-          sleep: 6,
-          pain: [],
-          time: 30,
-          equipment: ["bodyweight"],
-        });
-      }
-    }
-  }, [isOpen, existingCheckin]);
+/** Ciclo de estados de uma zona: nada → cansaço muscular → dor → nada. */
+function nextPainState(cur: PainState | undefined): PainState | undefined {
+  if (!cur) return 'muscular';
+  if (cur === 'muscular') return 'dor';
+  return undefined;
+}
 
-  const togglePain = (id: string) => {
-    setForm(prev => ({
-      ...prev,
-      pain: prev.pain.includes(id) ? prev.pain.filter(p => p !== id) : [...prev.pain, id]
+interface CheckinModalProps {
+  existing: Checkin | null;
+  onSubmit: (checkin: Checkin) => void;
+  onClose: () => void;
+}
+
+export function CheckinModal({ existing, onSubmit, onClose }: CheckinModalProps) {
+  const [form, setForm] = useState<Checkin>(() => existing ?? emptyForm(todayKey()));
+
+  const set = <K extends keyof Checkin>(key: K, value: Checkin[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const togglePainZone = (zoneId: string) =>
+    setForm((f) => {
+      const zones = { ...f.painZones };
+      const next = nextPainState(zones[zoneId]);
+      if (next) zones[zoneId] = next;
+      else delete zones[zoneId];
+      return { ...f, painZones: zones };
+    });
+
+  const toggleEquipment = (id: string) =>
+    setForm((f) => ({
+      ...f,
+      equipment: f.equipment.includes(id)
+        ? f.equipment.filter((x) => x !== id)
+        : [...f.equipment, id],
     }));
-  };
 
-  const toggleEquipment = (id: string) => {
-    setForm(prev => ({
-      ...prev,
-      equipment: prev.equipment.includes(id) ? prev.equipment.filter(e => e !== id) : [...prev.equipment, id]
-    }));
-  };
+  const submit = () =>
+    onSubmit({
+      ...form,
+      date: todayKey(),
+      equipment: form.equipment.length ? form.equipment : ['bodyweight'],
+    });
 
-  const submit = () => {
-    const key = todayKey();
-    const equipment = form.equipment.length ? form.equipment : ["bodyweight"];
-    const checkin = { ...form, date: key, equipment };
-    
-    const newData = { ...data };
-    newData.checkins[key] = checkin;
-    newData.plans[key] = generatePlan(checkin, data.goals);
-    
-    updateData(newData);
-    onClose();
-  };
-
-  const SliderRow = ({ field, label, val }: { field: keyof typeof form, label: string, val: number }) => (
-    <div className="mb-4">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-[0.85rem] text-[#9CB8B4]">{label}</span>
-        <span className="font-display font-bold text-[#D8FF3E]">{val}</span>
-      </div>
-      <input 
-        type="range" 
-        min="1" 
-        max="10" 
-        value={val} 
-        onChange={(e) => setForm(prev => ({ ...prev, [field]: parseInt(e.target.value) }))}
-      />
-    </div>
-  );
+  const playsToday = form.playingToday !== 'none';
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose}>
-      <h2 className="m-0 mb-[18px]">Check-in diário</h2>
+    <Modal onClose={onClose}>
+      <h2 style={{ margin: '0 0 18px' }}>Check-in diário</h2>
 
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mb-2.5">Hoje vou jogar padel?</label>
-      <div className="flex flex-wrap gap-2 mb-5">
-        {PLAYING_TODAY.map(o => (
-          <button 
+      <label className="field-label">Hoje vou jogar padel?</label>
+      <div className="chip-row" style={{ marginBottom: 20 }}>
+        {PLAYING_TODAY.map((o) => (
+          <span
             key={o.id}
-            onClick={() => setForm(prev => ({ ...prev, playingToday: o.id }))}
-            className={`inline-flex items-center px-3.5 py-2 rounded-full text-[0.82rem] font-semibold border ${form.playingToday === o.id ? 'bg-[#D8FF3E] text-[#12210A] border-[#D8FF3E]' : 'bg-white/5 text-[#9CB8B4] border-transparent'}`}
+            className={`chip ${o.id === form.playingToday ? 'selected' : ''}`}
+            onClick={() => set('playingToday', o.id)}
           >
             {o.label}
-          </button>
+          </span>
         ))}
       </div>
 
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mb-2.5">Ontem joguei?</label>
-      <div className="flex bg-white/5 rounded-full p-1 gap-0.5 mb-5">
-        {YESTERDAY.map(o => (
-          <button 
+      {playsToday && (
+        <div style={{ marginBottom: 20 }}>
+          <label className="field-label">Quantas horas vais jogar hoje?</label>
+          <div className="segmented">
+            {HOUR_OPTIONS.map((h) => (
+              <span
+                key={h}
+                className={`seg ${h === form.hours ? 'selected' : ''}`}
+                onClick={() => set('hours', h)}
+              >
+                {h}h
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <label className="field-label">Ontem joguei?</label>
+      <div className="segmented" style={{ marginBottom: 20 }}>
+        {YESTERDAY.map((o) => (
+          <span
             key={o.id}
-            onClick={() => setForm(prev => ({ ...prev, playedYesterday: o.id }))}
-            className={`flex-1 text-center py-2 px-1 rounded-full text-[0.76rem] font-semibold ${form.playedYesterday === o.id ? 'bg-[#D8FF3E] text-[#12210A]' : 'text-[#9CB8B4] hover:bg-white/5'}`}
+            className={`seg ${o.id === form.playedYesterday ? 'selected' : ''}`}
+            onClick={() => set('playedYesterday', o.id)}
           >
             {o.label}
-          </button>
+          </span>
         ))}
       </div>
 
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mb-2.5">Como me sinto hoje</label>
-      <SliderRow field="energy" label="Energia" val={form.energy} />
-      <SliderRow field="soreness" label="Dor muscular" val={form.soreness} />
-      <SliderRow field="fatigue" label="Cansaço" val={form.fatigue} />
-      <SliderRow field="sleep" label="Qualidade do sono" val={form.sleep} />
-
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mt-1.5 mb-2.5">Dor em alguma zona?</label>
-      <div className="flex flex-wrap gap-2 mb-5">
-        {PAIN_ZONES.map(z => (
-          <button 
-            key={z.id}
-            onClick={() => togglePain(z.id)}
-            className={`inline-flex items-center px-3.5 py-2 rounded-full text-[0.82rem] font-semibold border ${form.pain.includes(z.id) ? 'bg-[#D8FF3E] text-[#12210A] border-[#D8FF3E]' : 'bg-white/5 text-[#9CB8B4] border-transparent'}`}
+      <label className="field-label">Que tipo de treino fizeste ontem (além do padel)?</label>
+      <div className="chip-row" style={{ marginBottom: 20 }}>
+        {YESTERDAY_TRAINING.map((o) => (
+          <span
+            key={o.id}
+            className={`chip ${o.id === form.yesterdayTraining ? 'selected' : ''}`}
+            onClick={() => set('yesterdayTraining', o.id)}
           >
-            {z.label}
-          </button>
+            {o.label}
+          </span>
         ))}
       </div>
 
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mb-2.5">Quanto tempo tenho hoje?</label>
-      <div className="flex bg-white/5 rounded-full p-1 gap-0.5 mb-5">
-        {TIME_OPTIONS.map(t => (
-          <button 
+      <label className="field-label">Como me sinto hoje</label>
+      <SliderRow label="Energia" value={form.energy} onChange={(v) => set('energy', v)} />
+      <SliderRow label="Dor muscular" value={form.soreness} onChange={(v) => set('soreness', v)} />
+      <SliderRow label="Cansaço" value={form.fatigue} onChange={(v) => set('fatigue', v)} />
+      <SliderRow label="Qualidade do sono" value={form.sleep} onChange={(v) => set('sleep', v)} />
+
+      <label className="field-label" style={{ marginTop: 6 }}>
+        Dor ou cansaço muscular em alguma zona?
+      </label>
+      <div style={{ fontSize: '0.74rem', color: 'var(--text-faint)', margin: '-6px 0 10px' }}>
+        Toca uma vez para &quot;cansaço muscular&quot;, duas vezes para &quot;dor&quot;. Toca outra
+        vez para limpar.
+      </div>
+      <div className="chip-row pain-zones" style={{ marginBottom: 20 }}>
+        {PAIN_ZONES.map((z) => {
+          const state = form.painZones[z.id];
+          const cls = state === 'dor' ? 'selected' : state === 'muscular' ? 'muscular' : '';
+          const suffix = state === 'dor' ? ' · dor' : state === 'muscular' ? ' · cansaço' : '';
+          return (
+            <span key={z.id} className={`chip ${cls}`} onClick={() => togglePainZone(z.id)}>
+              {z.label}
+              {suffix}
+            </span>
+          );
+        })}
+      </div>
+
+      <label className="field-label">Quanto tempo tenho hoje?</label>
+      <div className="segmented" style={{ marginBottom: 20 }}>
+        {TIME_OPTIONS.map((t) => (
+          <span
             key={t}
-            onClick={() => setForm(prev => ({ ...prev, time: t }))}
-            className={`flex-1 text-center py-2 px-1 rounded-full text-[0.76rem] font-semibold ${form.time === t ? 'bg-[#D8FF3E] text-[#12210A]' : 'text-[#9CB8B4] hover:bg-white/5'}`}
+            className={`seg ${t === form.time ? 'selected' : ''}`}
+            onClick={() => set('time', t)}
           >
             {t === 60 ? '60+' : t}
-          </button>
+          </span>
         ))}
       </div>
 
-      <label className="block text-[0.86rem] font-semibold text-[#EFF6F1] mb-2.5">Material disponível</label>
-      <div className="flex flex-wrap gap-2 mb-6">
-        {EQUIPMENT.map(eq => (
-          <button 
+      <label className="field-label">Material disponível</label>
+      <div className="chip-row" style={{ marginBottom: 24 }}>
+        {EQUIPMENT.map((eq) => (
+          <span
             key={eq.id}
+            className={`chip ${form.equipment.includes(eq.id) ? 'selected' : ''}`}
             onClick={() => toggleEquipment(eq.id)}
-            className={`inline-flex items-center px-3.5 py-2 rounded-full text-[0.82rem] font-semibold border ${form.equipment.includes(eq.id) ? 'bg-[#D8FF3E] text-[#12210A] border-[#D8FF3E]' : 'bg-white/5 text-[#9CB8B4] border-transparent'}`}
           >
             {eq.label}
-          </button>
+          </span>
         ))}
       </div>
 
-      <button onClick={submit} className="w-full bg-[#D8FF3E] text-[#12210A] font-display font-bold text-[0.92rem] py-3.5 px-5 rounded-full flex items-center justify-center">
+      <button className="btn btn-primary" onClick={submit}>
         Gerar Plano
       </button>
-    </BottomSheet>
+    </Modal>
+  );
+}
+
+interface SliderRowProps {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}
+
+function SliderRow({ label, value, onChange }: SliderRowProps) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div className="row">
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>{label}</span>
+        <span className="slider-value">{value}</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={10}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </div>
   );
 }
