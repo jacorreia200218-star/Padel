@@ -8,6 +8,7 @@ escolhidos e a explicação de porque foram escolhidos.
 
 - `pnpm --filter @workspace/padel-coach run dev` — correr a app (porta 25005)
 - `pnpm --filter @workspace/padel-coach run build` — build de produção
+- `pnpm --filter @workspace/padel-coach run test` — testes ao motor e aos dados
 - `pnpm --filter @workspace/padel-coach run typecheck` — typecheck da app
 - `pnpm run typecheck` — typecheck de todos os pacotes
 - Env necessárias em dev: `PORT` e `BASE_PATH` (definidas pelo `artifact.toml`)
@@ -30,6 +31,7 @@ Toda a app está em `artifacts/padel-coach/`:
 | `src/data/zones.ts` | Programas por zona do corpo e os sinais de alerta da página de dores |
 | `src/data/profile.ts` | Perfil de quem usa a app e as opções dos seus campos |
 | `src/pwa.ts` | Registo do service worker e deteção de app instalada |
+| `src/**/*.test.ts` | Testes. Correm com `pnpm test` — sem dependências novas, via `tsx` e o test runner do Node |
 | `public/sw.js` | Service worker: a app abre sem rede |
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
@@ -56,6 +58,11 @@ Toda a app está em `artifacts/padel-coach/`:
   recolhe respostas humanas (escalas de 1 a 5 com rótulo, níveis de dor); o
   motor precisa de sinais grosseiros. A tradução está toda em `deriveSignals()`,
   para os dois lados poderem mudar sem se partirem um ao outro.
+- **Antes de mexer no motor, corre `pnpm test`.** As regras já são muitas e as
+  garantias que interessam — nunca sair carga num dia vermelho, nunca sugerir
+  material que não se tem, nunca devolver plano vazio — são testadas contra
+  centenas de combinações de respostas, não contra três casos escolhidos à mão.
+  Uma regra nova que pareça inofensiva pode partir uma delas.
 - **O semáforo manda no plano.** `computeStatus()` decide verde/amarelo/vermelho
   e o motor obedece: vermelho nunca produz carga, amarelo corta saltos, sprints
   e explosão mas mantém força moderada. Regras novas devem entrar dentro do

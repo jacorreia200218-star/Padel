@@ -232,7 +232,7 @@ export const PREVENTION: Exercise[] = [
     instructions: [
       'Antebraço apoiado, palma para baixo, punho para fora da mesa.',
       'Levanta o punho até ficar a direito com o antebraço.',
-      'Com a outra mão ou um elástico, faz resistência leve.',
+      'Faz resistência com a outra mão por cima — ou com um elástico, se tiveres.',
       'Aguenta sem mexer, respirando normalmente.',
     ],
     mistakes: [
@@ -246,7 +246,9 @@ export const PREVENTION: Exercise[] = [
     reps: '20-30s',
     rest: 30,
     diff: 'beginner',
-    equip: ['bands'],
+    // A resistência é feita com a outra mão. O elástico é opcional, e exigi-lo
+    // deixava sem reabilitação de cotovelo quem só tem peso corporal.
+    equip: ['bodyweight'],
     cats: ['rehabilitation', 'elbow'],
     alts: ['reab_cotovelo_excentrico', 'reab_dedos'],
   },
