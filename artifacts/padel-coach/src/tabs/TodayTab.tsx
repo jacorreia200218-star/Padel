@@ -72,6 +72,23 @@ export function TodayTab() {
 
   return (
     <>
+      {plan.redFlags?.length > 0 && (
+        <div className="card alert">
+          <b style={{ color: 'var(--coral)', fontSize: '0.88rem' }}>
+            ⚠ Vale a pena falar com um profissional
+          </b>
+          {plan.redFlags.map((f, i) => (
+            <div key={i} style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: 6 }}>
+              · {f}
+            </div>
+          ))}
+          <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: 10 }}>
+            O plano abaixo é deliberadamente suave, mas nenhum exercício substitui uma avaliação
+            médica ou de fisioterapia quando a dor é destas.
+          </div>
+        </div>
+      )}
+
       <div className="card hi">
         <div className="ring-wrap">
           <ReadinessRing pct={rs / 10} />
@@ -179,7 +196,6 @@ function completeToday() {
     const plan = d.plans[key];
     if (!checkin || !plan) return;
     plan.completed = true;
-    const realPainCount = Object.values(checkin.painZones ?? {}).filter((t) => t === 'dor').length;
     const hoursVal = checkin.hours === '3+' ? 3 : parseFloat(checkin.hours || '1.5');
     d.logs[key] = {
       date: key,
@@ -187,8 +203,8 @@ function completeToday() {
       didPlayPadel: checkin.playingToday !== 'none',
       padelHours: checkin.playingToday !== 'none' ? hoursVal : 0,
       fatigue: checkin.fatigue,
-      pain: realPainCount,
-      sleep: checkin.sleep,
+      pain: checkin.injuries.length,
+      sleep: checkin.sleepQuality,
       energy: checkin.energy,
     };
   });

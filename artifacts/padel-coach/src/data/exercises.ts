@@ -63,10 +63,13 @@ export const PAIN_ZONES: PainZone[] = [
   {id:"shoulder", label:"Ombro", rehab:"shoulder"},
   {id:"elbow", label:"Cotovelo", rehab:"elbow"},
   {id:"wrist", label:"Punho", rehab:"wrist"},
-  {id:"back", label:"Costas", rehab:"rehabilitation"},
-  {id:"calves", label:"Gémeos", rehab:"rehabilitation"},
-  {id:"knee", label:"Joelho", rehab:"knee"},
+  {id:"back", label:"Costas/lombar", rehab:"rehabilitation"},
   {id:"hip", label:"Anca", rehab:"rehabilitation"},
+  {id:"knee", label:"Joelho", rehab:"knee"},
+  {id:"calves", label:"Gémeos", rehab:"rehabilitation"},
+  {id:"ankle", label:"Tornozelo", rehab:"rehabilitation"},
+  {id:"foot", label:"Pé", rehab:"rehabilitation"},
+  {id:"other", label:"Outra", rehab:"rehabilitation"},
 ];
 
 // Dicas gerais de autocuidado. Informação geral de desporto, não é
@@ -85,6 +88,9 @@ export const PAIN_TIPS: Record<string, string[]> = {
   calves: ["Gelo 15 min após o esforço, pernas elevadas por uns minutos.", "Alongamento suave, sem forçar — nunca alongar contra dor aguda.", "Hidratação e eletrólitos ajudam a prevenir cãibras."],
   knee: ["Gelo 15 min, algumas vezes ao dia, especialmente após treino/jogo.", "Evita impacto (saltos, mudanças bruscas de direção) enquanto dói.", "Dor persistente, inchaço ou instabilidade → consulta um profissional."],
   hip: ["Gelo ou calor local, o que sentires que alivia mais.", "Mobilidade suave sem forçar amplitude máxima.", "Evita afundos/saltos profundos enquanto a dor não passar."],
+  ankle: ["Gelo 15 min e pé elevado, sobretudo nas primeiras 48h.", "Evita terreno irregular e mudanças bruscas de direção.", "Se houve torção com inchaço ou não aguentas o peso, procura avaliação."],
+  foot: ["Gelo ou rolar o pé sobre uma bola/garrafa fria, uns minutos por dia.", "Verifica o calçado — sola gasta ou pouco amortecimento agrava.", "Dor no calcanhar aos primeiros passos da manhã merece avaliação."],
+  other: ["Reduz a carga sobre a zona enquanto doer.", "Gelo nas primeiras 48h costuma ajudar; depois disso, calor.", "Se não melhorar em poucos dias, procura avaliação profissional."],
 };
 export const EQUIPMENT: Option[] = [
   {id:"bands", label:"Elásticos"}, {id:"dumbbells", label:"Halteres"},
@@ -99,12 +105,76 @@ export const PLAYING_TODAY: Option[] = [
   {id:"none", label:"Não"}, {id:"lesson", label:"Aula"}, {id:"casual", label:"Jogo casual"},
   {id:"tournament", label:"Torneio"}, {id:"intense", label:"Treino intenso"},
 ];
-export const YESTERDAY: Option[] = [
-  {id:"none", label:"Não"}, {id:"light", label:"Sim (leve)"}, {id:"intense", label:"Sim (intenso)"},
+/**
+ * Atividade de ontem. `padel` diz se conta como jogo de padel e `cats` são as
+ * categorias que ficaram carregadas — o motor usa-as para variar o estímulo.
+ */
+export interface ActivityOption extends Option {
+  padel: boolean;
+  cats: Category[];
+}
+
+export const YESTERDAY_ACTIVITIES: ActivityOption[] = [
+  { id: 'none', label: 'Não fiz nada', padel: false, cats: [] },
+  { id: 'padelLesson', label: 'Aula de padel', padel: true, cats: ['agility', 'footwork'] },
+  { id: 'padelMatch', label: 'Jogo de padel', padel: true, cats: ['agility', 'footwork', 'speed'] },
+  { id: 'strength', label: 'Treino de força', padel: false, cats: ['strength', 'explosiveness'] },
+  { id: 'bike', label: 'Bicicleta', padel: false, cats: ['recovery'] },
+  { id: 'run', label: 'Corrida', padel: false, cats: ['speed'] },
+  { id: 'mobility', label: 'Mobilidade', padel: false, cats: ['mobility', 'stretching'] },
+  { id: 'other', label: 'Outro', padel: false, cats: [] },
 ];
-export const YESTERDAY_TRAINING: Option[] = [
-  {id:"none", label:"Nenhum"}, {id:"strength", label:"Força/Explosão"},
-  {id:"cardio", label:"Cardio/Agilidade"}, {id:"mobility", label:"Mobilidade/Recuperação"},
+
+export const DURATION_OPTIONS: number[] = [15, 30, 45, 60, 90, 120];
+
+/** Escalas de 1 a 5 com rótulo, como pedido — mais claras do que um 1-10. */
+export const SLEEP_QUALITY: Option[] = [
+  { id: '1', label: '😴 Muito má' },
+  { id: '2', label: '😕 Má' },
+  { id: '3', label: '😐 Normal' },
+  { id: '4', label: '🙂 Boa' },
+  { id: '5', label: '😍 Excelente' },
+];
+
+export const ENERGY_LEVELS: Option[] = [
+  { id: '1', label: 'Sem energia' },
+  { id: '2', label: 'Baixa' },
+  { id: '3', label: 'Normal' },
+  { id: '4', label: 'Boa' },
+  { id: '5', label: 'Excelente' },
+];
+
+export const FATIGUE_LEVELS: Option[] = [
+  { id: '1', label: 'Nada cansado' },
+  { id: '2', label: 'Pouco' },
+  { id: '3', label: 'Moderado' },
+  { id: '4', label: 'Muito' },
+  { id: '5', label: 'Exausto' },
+];
+
+export const SORENESS_LEVELS: Option[] = [
+  { id: 'none', label: 'Não' },
+  { id: 'light', label: 'Ligeiras' },
+  { id: 'moderate', label: 'Moderadas' },
+  { id: 'strong', label: 'Fortes' },
+];
+
+export const PAIN_ONSET: Option[] = [
+  { id: 'today', label: 'Hoje' },
+  { id: 'days', label: 'Há dias' },
+  { id: 'weeks', label: 'Há semanas' },
+  { id: 'months', label: 'Há meses' },
+];
+
+export const PAIN_WHEN: Option[] = [
+  { id: 'movement', label: 'Só em movimento' },
+  { id: 'rest', label: 'Também em repouso' },
+];
+
+export const PAIN_TREND: Option[] = [
+  { id: 'better', label: 'A melhorar' },
+  { id: 'same', label: 'Igual' },
+  { id: 'worse', label: 'A piorar' },
 ];
 export const GOALS: Goal[] = [
   {id:"explosiveness", label:"Melhorar explosão", favors:["explosiveness","jumps","speed"]},

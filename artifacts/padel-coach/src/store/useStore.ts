@@ -1,8 +1,9 @@
 /**
  * Estado da aplicação, guardado em localStorage.
  *
- * A chave e o formato são exactamente os da versão anterior, para que quem já
- * usava a app não perca o histórico ao passar para esta versão.
+ * A chave de armazenamento nunca mudou desde a primeira versão. O formato sim,
+ * e por isso `AppData` tem um número de versão: ao carregar, dados antigos são
+ * convertidos por `migrate.ts` antes de chegarem à app.
  *
  * Atenção: os dados vivem só no browser deste dispositivo. Não há servidor nem
  * base de dados — mudar de telemóvel ou limpar os dados do browser apaga tudo.
@@ -11,20 +12,27 @@
 
 import { useEffect, useState } from 'react';
 
-import type { Checkin, Plan } from '../engine/planner';
+import type { Checkin } from '../engine/checkin';
+import type { Plan } from '../engine/planner';
+import { migrateCheckin, migrateLog } from './migrate';
 
 export interface Log {
   date: string;
   didTrain: boolean;
   didPlayPadel: boolean;
   padelHours: number;
+  /** Escalas de 1 a 5, como no check-in. */
   fatigue: number;
-  pain: number;
   sleep: number;
   energy: number;
+  /** Quantas zonas com dor a sério nesse dia. */
+  pain: number;
 }
 
+export const DATA_VERSION = 2;
+
 export interface AppData {
+  version: number;
   checkins: Record<string, Checkin>;
   plans: Record<string, Plan>;
   logs: Record<string, Log>;
@@ -35,6 +43,7 @@ export interface AppData {
 const STORAGE_KEY = 'padel-coach-ai-data';
 
 export const DEFAULT_DATA: AppData = {
+  version: DATA_VERSION,
   checkins: {},
   plans: {},
   logs: {},
@@ -42,17 +51,45 @@ export const DEFAULT_DATA: AppData = {
   exerciseLastUsed: {},
 };
 
-function readFromStorage(): AppData {
+/**
+ * Converte dados gravados por uma versão anterior. Os planos antigos são
+ * descartados de propósito: são derivados do check-in e voltam a ser gerados
+ * na hora, e converter um plano só para o mostrar no dia seguinte não compensa.
+ */
+export function migrate(raw: AppData): AppData {
+  if (raw.version === DATA_VERSION) return raw;
+
+  const checkins: Record<string, Checkin> = {};
+  for (const [key, checkin] of Object.entries(raw.checkins ?? {})) {
+    checkins[key] = (checkin as Checkin).version === 2 ? checkin : migrateCheckin(checkin as never);
+  }
+
+  const logs: Record<string, Log> = {};
+  for (const [key, log] of Object.entries(raw.logs ?? {})) {
+    logs[key] = migrateLog(log);
+  }
+
+  return { ...raw, version: DATA_VERSION, checkins, plans: {}, logs };
+}
+
+function readFromStorage(): { data: AppData; migrated: boolean } {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...structuredClone(DEFAULT_DATA), ...JSON.parse(raw) };
+    if (!raw) return { data: structuredClone(DEFAULT_DATA), migrated: false };
+    const parsed = JSON.parse(raw);
+    // A versão tem de sair do que estava gravado, não dos valores por omissão:
+    // dados da primeira versão não têm campo `version` e ficariam por migrar.
+    const version = parsed.version ?? 1;
+    const stored: AppData = { ...structuredClone(DEFAULT_DATA), ...parsed, version };
+    return { data: migrate(stored), migrated: version !== DATA_VERSION };
   } catch {
     // Primeira utilização, ou localStorage indisponível neste contexto.
   }
-  return structuredClone(DEFAULT_DATA);
+  return { data: structuredClone(DEFAULT_DATA), migrated: false };
 }
 
-let DATA: AppData = readFromStorage();
+const initial = readFromStorage();
+let DATA: AppData = initial.data;
 
 const listeners = new Set<() => void>();
 
@@ -72,6 +109,10 @@ export function saveData(next: AppData): boolean {
   notify();
   return ok;
 }
+
+// Dados convertidos de um formato antigo são gravados já, senão a conversão
+// repetia-se a cada arranque e o que ficava em disco continuava a ser o antigo.
+if (initial.migrated) saveData(DATA);
 
 /** Aplica uma alteração sobre o estado actual. */
 export function updateData(mutate: (draft: AppData) => void): boolean {

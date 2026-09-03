@@ -2,7 +2,7 @@ import { useRef } from 'react';
 
 import { showToast } from '../components/Toast';
 import { GOALS } from '../data/exercises';
-import { DEFAULT_DATA, saveData, todayKey, updateData, useStore } from '../store/useStore';
+import { DEFAULT_DATA, migrate, saveData, todayKey, updateData, useStore } from '../store/useStore';
 
 export function SettingsTab() {
   const data = useStore();
@@ -31,7 +31,8 @@ export function SettingsTab() {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (!parsed.checkins || !parsed.plans || !parsed.logs) throw new Error('formato inválido');
-        saveData({ ...structuredClone(DEFAULT_DATA), ...parsed });
+        // Um backup pode ter sido feito numa versão anterior do formato.
+        saveData(migrate({ ...structuredClone(DEFAULT_DATA), ...parsed, version: parsed.version ?? 1 }));
         showToast('Dados importados com sucesso.');
       } catch {
         showToast('Este ficheiro não é um backup válido do Padel Coach AI.');

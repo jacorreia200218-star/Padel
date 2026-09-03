@@ -23,7 +23,7 @@ export function StatsTab() {
         <div className="section-title" style={{ marginTop: 0 }}>
           Energia ao longo do tempo
         </div>
-        <LineChart values={last30.map((l) => l.energy)} min={0} max={10} />
+        <LineChart values={last30.map((l) => l.energy)} min={0} max={5} />
       </div>
 
       <div className="card">

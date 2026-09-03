@@ -101,6 +101,10 @@ main {
 .card.hi {
   background: var(--card-hi);
 }
+.card.alert {
+  background: rgba(255, 122, 102, 0.09);
+  border-color: rgba(255, 122, 102, 0.35);
+}
 .section-title {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -169,7 +173,9 @@ main {
   color: #2b0e08;
   border-color: var(--coral);
 }
-.pain-zones .chip.muscular {
+/* Cansaço muscular em âmbar, dor a sério em coral — a mesma linguagem de cor
+   que a app já usava nas dicas de recuperação. */
+.muscular-zones .chip.selected {
   background: var(--amber);
   color: #3b2405;
   border-color: var(--amber);

@@ -20,18 +20,25 @@ export function LineChart({ values, min, max }: LineChartProps) {
   const pad = 6;
   const lo = min ?? Math.min(...values);
   const hi = max ?? Math.max(...values, 1);
-  const points = values
-    .map((v, i) => {
-      const x = pad + i * ((W - 2 * pad) / Math.max(1, values.length - 1));
-      const y = H - pad - ((v - lo) / (hi - lo || 1)) * (H - 2 * pad);
-      return `${x},${y}`;
-    })
-    .join(' ');
+  const coords = values.map((v, i) => ({
+    x: pad + i * ((W - 2 * pad) / Math.max(1, values.length - 1)),
+    y: H - pad - ((v - lo) / (hi - lo || 1)) * (H - 2 * pad),
+  }));
+
+  // Uma polyline de um único ponto não desenha nada. Com um só registo,
+  // marcamos o ponto — senão o cartão aparecia vazio no primeiro dia de uso.
+  if (coords.length === 1) {
+    return (
+      <svg className="chart" viewBox={`0 0 ${W} ${H}`}>
+        <circle cx={W / 2} cy={coords[0].y} r="4" fill="var(--accent)" />
+      </svg>
+    );
+  }
 
   return (
     <svg className="chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
       <polyline
-        points={points}
+        points={coords.map((c) => `${c.x},${c.y}`).join(' ')}
         fill="none"
         stroke="var(--accent)"
         strokeWidth="2.5"

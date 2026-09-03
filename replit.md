@@ -24,9 +24,11 @@ Toda a app está em `artifacts/padel-coach/`:
 
 | Ficheiro | O que é |
 |---|---|
-| `src/data/exercises.ts` | **Fonte de verdade** dos 62 exercícios, categorias, zonas de dor, equipamento, objetivos e dicas |
+| `src/data/exercises.ts` | **Fonte de verdade** dos 62 exercícios, categorias, zonas de dor, equipamento, objetivos, escalas e dicas |
+| `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
 | `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
+| `src/store/migrate.ts` | Conversão de dados gravados por versões anteriores do formato |
 | `src/tabs/` | Os cinco separadores (Hoje, Biblioteca, Histórico, Estatísticas, Definições) |
 | `src/app.css` | Estilos da app. `src/index.css` tem só os tokens de cor e o Tailwind |
 
@@ -43,6 +45,14 @@ Toda a app está em `artifacts/padel-coach/`:
 - **CSS próprio, sem biblioteca de componentes.** A app tem uma linguagem visual
   definida (fundo escuro azulado, acento lima) que não vale a pena reconstruir
   em cima de componentes genéricos.
+- **O formulário e o motor não falam a mesma língua, de propósito.** O check-in
+  recolhe respostas humanas (escalas de 1 a 5 com rótulo, níveis de dor); o
+  motor precisa de sinais grosseiros. A tradução está toda em `deriveSignals()`,
+  para os dois lados poderem mudar sem se partirem um ao outro.
+- **Sinais de alerta não são diagnóstico.** `redFlagsFor()` só reconhece
+  situações em que continuar sozinho não é boa ideia (dor ≥ 7/10, dor em
+  repouso, dor de semanas a piorar) e recomenda avaliação profissional. A app
+  nunca nomeia lesões nem promete que um exercício resolve seja o que for.
 
 ## Product
 
@@ -70,6 +80,11 @@ Cinco separadores:
   `exerciseLastUsed` guarda ids e os planos antigos referenciam-nos.
 - **Alterar o formato de `AppData` exige migração**, senão quem já usa a app
   perde o histórico. A chave de `localStorage` é `padel-coach-ai-data`.
+  Subir `DATA_VERSION`, acrescentar a conversão em `migrate.ts` e testar com
+  dados da versão anterior — a migração corre ao carregar e grava logo.
+- **As escalas de energia, cansaço e qualidade do sono são de 1 a 5**; a dor
+  muscular e a dor de lesão são de 0 a 10. Misturá-las dá contas erradas na
+  prontidão — a conversão está em `deriveSignals()`.
 
 ## Pointers
 
