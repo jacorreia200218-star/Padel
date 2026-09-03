@@ -27,6 +27,7 @@ Toda a app está em `artifacts/padel-coach/`:
 | `src/data/exercises.ts` | **Fonte de verdade** dos 62 exercícios, categorias, zonas de dor, equipamento, objetivos, escalas e dicas |
 | `src/engine/checkin.ts` | Formato do check-in e os **sinais** que dele se derivam (prontidão, cansaço, sinais de alerta) |
 | `src/engine/planner.ts` | **Motor de decisão**: recebe o check-in e devolve o plano do dia |
+| `src/engine/session.ts` | O treino a decorrer: onde vai, substituições, alternativas |
 | `src/store/useStore.ts` | Estado + leitura/escrita em `localStorage` |
 | `src/store/migrate.ts` | Conversão de dados gravados por versões anteriores do formato |
 | `src/tabs/` | Os cinco separadores (Hoje, Biblioteca, Histórico, Estatísticas, Definições) |
@@ -66,7 +67,9 @@ Cinco separadores:
 - **Hoje** — check-in diário (jogo previsto, sono, energia, cansaço, dores
   musculares, dor por zona com triagem, atividade de ontem, tempo e material) e,
   a partir dele, o **estado do dia** em semáforo 🟢🟡🔴, o plano resultante, o
-  raciocínio da escolha e dicas de recuperação por zona.
+  raciocínio da escolha e dicas de recuperação por zona. Daí arranca o **treino
+  guiado**: um exercício de cada vez, com temporizador de descanso e a opção de
+  trocar, facilitar, saltar ou parar quando algo custa ou dói.
 - **Biblioteca** — os 62 exercícios, com pesquisa e filtro por categoria.
 - **Histórico** — calendário mensal com marca por dia (jogo, treino, descanso, dor).
 - **Estatísticas** — horas de padel, dias de treino, sequência e gráficos a 30 dias.
@@ -82,6 +85,12 @@ Cinco separadores:
   `parseDateKey()` de `src/store/useStore.ts` — nunca `toISOString()` sobre uma
   data local, que no horário de verão recua um dia (era o bug da versão
   anterior), nem `new Date("2026-09-03")`, que é lido como meia-noite UTC.
+- **A sessão de treino é persistida de propósito** (`AppData.session`). Um treino
+  é interrompido a toda a hora e ter de recomeçar do primeiro exercício é a
+  diferença entre usar a app durante o treino e desistir dela.
+- **O temporizador de descanso conta pelo relógio, não somando ticks** — o
+  telemóvel suspende `setInterval` com o ecrã bloqueado e o descanso sairia
+  muito mais longo do que o real.
 - **Ao mudar `exercises.ts`, não reutilizar ids antigos com significado novo** —
   `exerciseLastUsed` guarda ids e os planos antigos referenciam-nos.
 - **Alterar o formato de `AppData` exige migração**, senão quem já usa a app

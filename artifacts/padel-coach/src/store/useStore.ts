@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 
 import type { Checkin } from '../engine/checkin';
 import type { Plan } from '../engine/planner';
+import type { Session } from '../engine/session';
 import { migrateCheckin, migrateLog } from './migrate';
 
 export interface Log {
@@ -44,6 +45,8 @@ export interface AppData {
   logs: Record<string, Log>;
   goals: string[];
   exerciseLastUsed: Record<string, string>;
+  /** Treino a decorrer, para sobreviver a fechar a app a meio. */
+  session: Session | null;
 }
 
 const STORAGE_KEY = 'padel-coach-ai-data';
@@ -55,6 +58,7 @@ export const DEFAULT_DATA: AppData = {
   logs: {},
   goals: ['injuryPrevention'],
   exerciseLastUsed: {},
+  session: null,
 };
 
 /**

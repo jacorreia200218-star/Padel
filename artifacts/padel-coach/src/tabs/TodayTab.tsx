@@ -14,7 +14,9 @@ import {
   exerciseById,
   type Exercise,
 } from '../data/exercises';
+import { WorkoutScreen } from '../components/WorkoutScreen';
 import { generatePlan, readinessScore, type Checkin, type Plan } from '../engine/planner';
+import { startSession, type Session } from '../engine/session';
 import { todayKey, updateData, useStore } from '../store/useStore';
 
 export function TodayTab() {
@@ -22,10 +24,12 @@ export function TodayTab() {
   const key = todayKey();
   const checkin = data.checkins[key];
   const plan = data.plans[key];
+  const session = data.session;
 
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [redo, setRedo] = useState(false);
   const [openExercise, setOpenExercise] = useState<Exercise | null>(null);
+  const [workoutOpen, setWorkoutOpen] = useState(false);
 
   // Se houver check-in mas ainda não um plano (por exemplo, dados importados de
   // outro dispositivo), geramos o plano na primeira renderização do dia.
@@ -136,8 +140,22 @@ export function TodayTab() {
           ✓ Dia concluído
         </div>
       ) : (
-        <button className="btn btn-primary" style={{ marginTop: 8 }} onClick={completeToday}>
-          Marcar dia como concluído
+        <button
+          className="btn btn-primary"
+          style={{ marginTop: 8 }}
+          onClick={() => {
+            // Retomar não recomeça: a sessão guardada mantém onde ficou.
+            if (!session || session.date !== key) {
+              updateData((d) => {
+                d.session = startSession(key, plan.exerciseIds);
+              });
+            }
+            setWorkoutOpen(true);
+          }}
+        >
+          {session && session.date === key && session.index > 0
+            ? `Retomar treino (${session.index + 1}/${session.exerciseIds.length})`
+            : 'Começar treino'}
         </button>
       )}
 
@@ -165,6 +183,17 @@ export function TodayTab() {
       {openExercise && (
         <ExerciseModal exercise={openExercise} onClose={() => setOpenExercise(null)} />
       )}
+      {workoutOpen && session && (
+        <WorkoutScreen
+          session={session}
+          equipment={checkin.equipment}
+          onUpdate={(next) => updateData((d) => void (d.session = next))}
+          onFinish={(next) => {
+            finishWorkout(next);
+          }}
+          onClose={() => setWorkoutOpen(false)}
+        />
+      )}
     </>
   );
 }
@@ -188,17 +217,31 @@ function saveCheckin(checkin: Checkin) {
     p.exerciseIds.forEach((id) => {
       d.exerciseLastUsed[id] = checkin.date;
     });
+    // Refazer o check-in gera outro plano: uma sessão a meio do plano anterior
+    // deixaria de fazer sentido, e retomá-la mostraria exercícios que já não
+    // pertencem ao dia.
+    if (d.session?.date === checkin.date) d.session = null;
   });
   if (!ok) showToast('Não foi possível guardar neste ambiente. Abre a app no Safari do iPhone.');
 }
 
-function completeToday() {
+/**
+ * Fecha o treino: marca o dia, escreve o registo do histórico e guarda os
+ * exercícios que provocaram dor, para o motor os evitar nos dias seguintes.
+ */
+function finishWorkout(session: Session) {
   const key = todayKey();
   const ok = updateData((d) => {
     const checkin = d.checkins[key];
     const plan = d.plans[key];
     if (!checkin || !plan) return;
     plan.completed = true;
+    d.session = { ...session, finishedAt: new Date().toISOString() };
+    // Um exercício que doeu hoje é tratado como usado agora, para descer na
+    // ordem de escolha e não voltar já amanhã.
+    session.painful.forEach((id) => {
+      d.exerciseLastUsed[id] = key;
+    });
     const hoursVal = checkin.hours === '3+' ? 3 : parseFloat(checkin.hours || '1.5');
     d.logs[key] = {
       date: key,
